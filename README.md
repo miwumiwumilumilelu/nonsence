@@ -31,21 +31,21 @@ nonsence 是一个 Web 端计算机辅助翻译系统，旨在为用户提供高
     <!-- FirwoodLin -->
     <td align="center">
       <img src="https://github.com/miwumiwumilumilelu.png" width="100" alt="manbin"><br>
-      <b>Firwood Lin</b><br>
+      <b>manbin Lin</b><br>
       Backend Dev & Ops<br>
       Architective Design
     </td>
     <!-- JerryC66 -->
     <td align="center">
       <img src="https://github.com/Koreyoshi01.png" width="100" alt="Koreyoshi01"><br>
-      <b>CC</b><br>
+      <b>Koreyoshi01</b><br>
       Frontend Developer<br>
       Design Debater
     </td>
     <!-- Sein404 -->
     <td align="center">
       <img src="https://github.com/9100my.png" width="100" alt="9100my"><br>
-      <b>Li Ka-shing</b><br>
+      <b>9100my</b><br>
       PM & Design<br>
       Doc Writer & Pre Speaker
     </td>
