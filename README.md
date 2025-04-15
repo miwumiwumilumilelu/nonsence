@@ -31,7 +31,7 @@ nonsence 是一个 Web 端计算机辅助翻译系统，旨在为用户提供高
     <!-- FirwoodLin -->
     <td align="center">
       <img src="https://github.com/miwumiwumilumilelu.png" width="100" alt="manbin"><br>
-      <b>manbin Lin</b><br>
+      <b>manbin</b><br>
       Backend Dev & Ops<br>
       Architective Design
     </td>
