@@ -1,0 +1,179 @@
+// 重置默认样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// 基础变量
+:root {
+  --primary-color: #1890ff;
+  --primary-hover: #40a9ff;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #f5222d;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+}
+
+// 全局样式
+body {
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.85);
+  background-color: #f0f2f5;
+}
+
+// 布局样式
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+// 按钮样式
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &-primary {
+    color: #fff;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+
+    &:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+  }
+}
+
+// 表单样式
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.85);
+  background-color: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  transition: all 0.3s;
+
+  &:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+}
+
+// 卡片样式
+.card {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+// 表格样式
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    text-align: left;
+  }
+
+  th {
+    background: #fafafa;
+    font-weight: 500;
+  }
+}
+
+// 响应式布局
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+}
+
+// 滚动条样式
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+  
+  &:hover {
+    background: #a8a8a8;
+  }
+}
+
+// 通用样式
+.page-container {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+}
+
+// Element Plus 样式覆盖
+.el-card {
+  border-radius: 4px;
+  
+  .el-card__header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ebeef5;
+  }
+  
+  .el-card__body {
+    padding: 20px;
+  }
+}
+
+.el-table {
+  .el-table__header-wrapper {
+    th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 500;
+    }
+  }
+}
+
+.el-pagination {
+  margin-top: 20px;
+  justify-content: flex-end;
+} 
