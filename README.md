@@ -49,6 +49,13 @@ nonsence 是一个 Web 端计算机辅助翻译系统，旨在为用户提供高
       PM & Design<br>
       Doc Writer & Pre Speaker
     </td>
+    <!-- cold -->
+    <td align="center">
+      <img src="https://github.com/cold122.png" width="100" alt="cold122"><br>
+      <b>cold</b><br>
+      Creative Design <br>
+      End-to-End Test
+    </td>
   </tr>
 </table>
 
