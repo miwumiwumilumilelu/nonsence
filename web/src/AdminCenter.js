@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import './ClientCenter.css';
 import './App.css'; // 确保样式可用
 
@@ -7,51 +8,118 @@ const menu = [
   { key: 'invoiceReview', label: '发票审核' },
   { key: 'user', label: '用户管理' },
   { key: 'stats', label: '平台数据' },
+  { key: 'msg', label: '留言管理' },
+  { key: 'discuss', label: '讨论审核' },
 ];
 
-const AD_STORAGE_KEY = 'nonsence_ads';
-const INVOICE_STORAGE_KEY = 'nonsence_invoices';
-const RECHARGE_STORAGE_KEY = 'nonsence_recharges';
-const PROFILE_STORAGE_KEY = 'nonsence_profile';
-const USERLIST_STORAGE_KEY = 'nonsence_userlist';
+const API_BASE = 'https://djck4ikhm4.hzh.sealos.run';
 
 function AdminCenter() {
   const [tab, setTab] = useState('adReview');
+  const [unlocked, setUnlocked] = useState(false);
+  const [pwd, setPwd] = useState('');
+  const [pwdMsg, setPwdMsg] = useState('');
   const [ads, setAds] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [recharges, setRecharges] = useState([]);
   const [userList, setUserList] = useState([]);
   const chartRef = useRef(null);
 
+  // 留言/讨论数据
+  const [messages, setMessages] = useState([]);
+  const [discussions, setDiscussions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  // 查询留言
+  const fetchMessages = async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await axios.post(`${API_BASE}/queryMessages`, { type: 2, status: 0 });
+      if (res.data && res.data.ok && Array.isArray(res.data.data)) {
+        setMessages(res.data.data);
+      } else {
+        setMessages([]);
+      }
+    } catch {
+      setMsg('获取留言失败');
+      setMessages([]);
+    }
+    setLoading(false);
+  };
+  // 查询讨论
+  const fetchDiscussions = async () => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await axios.post(`${API_BASE}/queryMessages`, { type: 1, status: 0 });
+      if (res.data && res.data.ok && Array.isArray(res.data.data)) {
+        setDiscussions(res.data.data);
+      } else {
+        setDiscussions([]);
+      }
+    } catch {
+      setMsg('获取讨论失败');
+      setDiscussions([]);
+    }
+    setLoading(false);
+  };
+  // 审核通过/删除
+  const handleAudit = async (_id, status, type) => {
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await axios.post(`${API_BASE}/auditMessage`, { _id, status });
+      if (res.data && res.data.ok) {
+        setMsg('操作成功');
+        if (type === 2) fetchMessages();
+        else fetchDiscussions();
+      } else {
+        setMsg(res.data.error || '操作失败');
+      }
+    } catch {
+      setMsg('网络错误');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!unlocked) return;
+    if (tab === 'msg') fetchMessages();
+    if (tab === 'discuss') fetchDiscussions();
+    // eslint-disable-next-line
+  }, [tab, unlocked]);
+
   // 加载本地数据
   useEffect(() => {
-    const saved = localStorage.getItem(AD_STORAGE_KEY);
+    const saved = localStorage.getItem('nonsence_ads');
     if (saved) setAds(JSON.parse(saved));
-    const invs = localStorage.getItem(INVOICE_STORAGE_KEY);
+    const invs = localStorage.getItem('nonsence_invoices');
     if (invs) setInvoices(JSON.parse(invs));
-    const recs = localStorage.getItem(RECHARGE_STORAGE_KEY);
+    const recs = localStorage.getItem('nonsence_recharges');
     if (recs) setRecharges(JSON.parse(recs));
-    let users = localStorage.getItem(USERLIST_STORAGE_KEY);
+    let users = localStorage.getItem('nonsence_userlist');
     if (users) {
       setUserList(JSON.parse(users));
     } else {
-      const prof = localStorage.getItem(PROFILE_STORAGE_KEY);
+      const prof = localStorage.getItem('nonsence_profile');
       if (prof) {
         setUserList([{ ...JSON.parse(prof), id: 1, enabled: true }]);
-        localStorage.setItem(USERLIST_STORAGE_KEY, JSON.stringify([{ ...JSON.parse(prof), id: 1, enabled: true }]));
+        localStorage.setItem('nonsence_userlist', JSON.stringify([{ ...JSON.parse(prof), id: 1, enabled: true }]));
       }
     }
   }, []);
 
   // 保存广告和发票数据
   useEffect(() => {
-    localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(ads));
+    localStorage.setItem('nonsence_ads', JSON.stringify(ads));
   }, [ads]);
   useEffect(() => {
-    localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
+    localStorage.setItem('nonsence_invoices', JSON.stringify(invoices));
   }, [invoices]);
   useEffect(() => {
-    localStorage.setItem(USERLIST_STORAGE_KEY, JSON.stringify(userList));
+    localStorage.setItem('nonsence_userlist', JSON.stringify(userList));
   }, [userList]);
 
   // 广告审核操作
@@ -100,6 +168,28 @@ function AdminCenter() {
     ctx.fillStyle = '#43a047'; ctx.fillRect(100,250,16,16); ctx.fillStyle='#333'; ctx.fillText('投放中',120,263);
     ctx.fillStyle = '#e57373'; ctx.fillRect(200,250,16,16); ctx.fillStyle='#333'; ctx.fillText('已驳回',220,263);
   }, [tab, adStatusCount]);
+
+  // 密码解锁
+  if (!unlocked) {
+    return (
+      <div className="page-card" style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
+        <h2 style={{textAlign:'center',color:'#1976d2'}}>管理员中心</h2>
+        <form onSubmit={e => {
+          e.preventDefault();
+          if (pwd === '123456') {
+            setUnlocked(true);
+            setPwdMsg('');
+          } else {
+            setPwdMsg('密码错误');
+          }
+        }} style={{display:'flex',flexDirection:'column',gap:18}}>
+          <label>请输入管理员密码：<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} required /></label>
+          <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'8px 0',fontSize:'1.08rem',marginTop:8}}>进入</button>
+          {pwdMsg && <div style={{color:'#e57373',marginTop:4}}>{pwdMsg}</div>}
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="page-card">
@@ -259,6 +349,58 @@ function AdminCenter() {
                 <h3>广告状态分布</h3>
                 <canvas ref={chartRef} width={300} height={280} style={{background:'#f4f6fa',borderRadius:8}} />
               </div>
+            </div>
+          )}
+          {tab === 'msg' && (
+            <div>
+              <h2>留言管理</h2>
+              {loading ? <p>加载中...</p> : (
+                <table className="ads-table">
+                  <thead>
+                    <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
+                  </thead>
+                  <tbody>
+                    {messages.map(m => (
+                      <tr key={m._id}>
+                        <td>{m.nickname}</td>
+                        <td>{m.content}</td>
+                        <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
+                        <td>
+                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,2)}>通过</button>
+                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,2)}>删除</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {msg && <div style={{color:'#e57373',marginTop:8}}>{msg}</div>}
+            </div>
+          )}
+          {tab === 'discuss' && (
+            <div>
+              <h2>讨论审核</h2>
+              {loading ? <p>加载中...</p> : (
+                <table className="ads-table">
+                  <thead>
+                    <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
+                  </thead>
+                  <tbody>
+                    {discussions.map(m => (
+                      <tr key={m._id}>
+                        <td>{m.nickname}</td>
+                        <td>{m.content}</td>
+                        <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
+                        <td>
+                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,1)}>通过</button>
+                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,1)}>删除</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {msg && <div style={{color:'#e57373',marginTop:8}}>{msg}</div>}
             </div>
           )}
         </main>

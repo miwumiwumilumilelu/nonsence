@@ -3,8 +3,16 @@ import './Navbar.css';
 
 const Sidebar = ({ setPage, current }) => (
   <aside className="sidebar">
-    <button className={current === 'client' ? 'active' : ''} onClick={() => setPage('client')}>广告主中心</button>
-    <button className={current === 'admin' ? 'active' : ''} onClick={() => setPage('admin')}>管理员中心</button>
+    {/* 顶部圆形点缀 */}
+    <svg width="40" height="40" style={{position:'absolute',top:24,left:65,opacity:0.18,zIndex:2,pointerEvents:'none'}}>
+      <circle cx="20" cy="20" r="20" fill="#fff" />
+    </svg>
+    <button className={current === 'client' ? 'active' : ''} onClick={() => setPage('client')}>
+      <span role="img" aria-label="ad" style={{marginRight:8}}>📢</span>广告主中心
+    </button>
+    <button className={current === 'admin' ? 'active' : ''} onClick={() => setPage('admin')}>
+      <span role="img" aria-label="admin" style={{marginRight:8}}>🛡️</span>管理员中心
+    </button>
   </aside>
 );
 

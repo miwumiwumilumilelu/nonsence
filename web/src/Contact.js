@@ -1,20 +1,41 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './Contact.css';
 import './App.css';
 
 function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', message: '' });
-  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({ nickname: '', content: '' });
+  const [msg, setMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
-    setSubmitted(true);
-    setForm({ name: '', email: '', message: '' });
+    if (!form.nickname.trim() || !form.content.trim()) {
+      setMsg('请填写完整信息');
+      return;
+    }
+    setLoading(true);
+    setMsg('');
+    try {
+      const res = await axios.post('https://djck4ikhm4.hzh.sealos.run/message', {
+        nickname: form.nickname,
+        content: form.content,
+        type: 2 // 联系我们
+      });
+      if (res.data && res.data.ok) {
+        setMsg('留言提交成功，等待审核！');
+        setForm({ nickname: '', content: '' });
+      } else {
+        setMsg(res.data.error || '提交失败');
+      }
+    } catch (err) {
+      setMsg('网络错误，请稍后再试');
+    }
+    setLoading(false);
   };
 
   return (
@@ -30,11 +51,10 @@ function Contact() {
         </div>
         <form className="contact-form" onSubmit={handleSubmit}>
           <h3>在线留言</h3>
-          <input name="name" type="text" placeholder="姓名" value={form.name} onChange={handleChange} required />
-          <input name="email" type="email" placeholder="邮箱" value={form.email} onChange={handleChange} required />
-          <textarea name="message" placeholder="留言内容" value={form.message} onChange={handleChange} required />
-          <button type="submit">提交</button>
-          {submitted && <div className="contact-success">感谢您的留言，我们会尽快联系您！</div>}
+          <input name="nickname" type="text" placeholder="昵称" value={form.nickname} onChange={handleChange} required />
+          <textarea name="content" placeholder="留言内容" value={form.content} onChange={handleChange} required />
+          <button type="submit" disabled={loading}>{loading ? '提交中...' : '提交'}</button>
+          {msg && <div className="contact-success">{msg}</div>}
         </form>
       </div>
     </div>

@@ -5,6 +5,7 @@
   "dependencies": {
     "@tsparticles/all": "^3.8.1",
     "@tsparticles/react": "^3.0.0",
+    "axios": "^1.9.0",
     "cra-template-pwa": "2.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
