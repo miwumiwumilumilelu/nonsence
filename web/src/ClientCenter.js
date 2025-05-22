@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ClientCenter.css';
 import './App.css'; // 确保样式可用
+import axios from 'axios';
+
+const API_BASE = 'https://djck4ikhm4.hzh.sealos.run';
 
 const menu = [
-  { key: 'profile', label: '个人信息' },
+  // { key: 'profile', label: '个人信息' }, // 删除个人信息菜单
   { key: 'ads', label: '我的广告' },
   { key: 'buy', label: '购买广告' },
   { key: 'material', label: '广告素材管理' },
-  { key: 'msg', label: '消息中心' },
-  { key: 'help', label: '帮助中心' },
   { key: 'recharge', label: '充值' },
   { key: 'rechargeHistory', label: '充值历史' },
   { key: 'stats', label: '广告数据' },
   { key: 'invoice', label: '发票管理' },
+  { key: 'help', label: '帮助中心' },
 ];
 
 const AD_STORAGE_KEY = 'nonsence_ads';
@@ -48,8 +50,11 @@ function ClientCenter({ user }) {
   const [msg, setMsg] = useState('');
 
   // 充值相关
-  const [balance, setBalance] = useState(0);
-  const [rechargeForm, setRechargeForm] = useState({ amount: '', method: '支付宝' });
+  const [balance, setBalance] = useState(() => {
+    const b = localStorage.getItem('nonsence_balance');
+    return b ? Number(b) : 0;
+  });
+  const [rechargeForm, setRechargeForm] = useState({ amount: '', method: '微信支付' });
   const [rechargeMsg, setRechargeMsg] = useState('');
   const [recharges, setRecharges] = useState([]);
 
@@ -71,94 +76,28 @@ function ClientCenter({ user }) {
   const [materials, setMaterials] = useState([]);
   const [materialMsg, setMaterialMsg] = useState('');
 
-  // 消息相关
-  const [msgs, setMsgs] = useState([]);
-
-  // 加载本地数据
+  // 加载后端数据
   useEffect(() => {
-    const saved = localStorage.getItem(AD_STORAGE_KEY);
-    if (saved) setAds(JSON.parse(saved));
-    const bal = localStorage.getItem(BALANCE_STORAGE_KEY);
-    if (bal) setBalance(Number(bal));
-    const recs = localStorage.getItem(RECHARGE_STORAGE_KEY);
-    if (recs) setRecharges(JSON.parse(recs));
-    const invs = localStorage.getItem(INVOICE_STORAGE_KEY);
-    if (invs) setInvoices(JSON.parse(invs));
-    const prof = localStorage.getItem(PROFILE_STORAGE_KEY);
-    if (prof) setProfile(JSON.parse(prof));
-    const mats = localStorage.getItem(MATERIAL_STORAGE_KEY);
-    if (mats) setMaterials(JSON.parse(mats));
-    const msgSaved = localStorage.getItem(MSG_STORAGE_KEY);
-    if (msgSaved) setMsgs(JSON.parse(msgSaved));
-  }, []);
-
-  // 保存广告数据
-  useEffect(() => {
-    localStorage.setItem(AD_STORAGE_KEY, JSON.stringify(ads));
-    setStats(mockStats(ads));
-  }, [ads]);
-
-  // 保存余额
-  useEffect(() => {
-    localStorage.setItem(BALANCE_STORAGE_KEY, String(balance));
-  }, [balance]);
-
-  // 保存充值历史
-  useEffect(() => {
-    localStorage.setItem(RECHARGE_STORAGE_KEY, JSON.stringify(recharges));
-  }, [recharges]);
-
-  // 保存发票历史
-  useEffect(() => {
-    localStorage.setItem(INVOICE_STORAGE_KEY, JSON.stringify(invoices));
-  }, [invoices]);
-
-  // 保存个人信息
-  useEffect(() => {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  }, [profile]);
-
-  // 保存素材
-  useEffect(() => {
-    localStorage.setItem(MATERIAL_STORAGE_KEY, JSON.stringify(materials));
-  }, [materials]);
-
-  // 保存消息
-  useEffect(() => {
-    localStorage.setItem(MSG_STORAGE_KEY, JSON.stringify(msgs));
-  }, [msgs]);
-
-  // 自动生成消息（广告审核、发票审核）
-  useEffect(() => {
-    // 广告审核消息
-    ads.forEach(ad => {
-      if ((ad.status === '投放中' || ad.status === '已驳回') && !msgs.find(m => m.type==='ad' && m.id===ad.id)) {
-        setMsgs(msgs => [{
-          id: ad.id,
-          type: 'ad',
-          title: `广告"${ad.name}"审核${ad.status==='投放中'?'通过':'被驳回'}`,
-          content: `广告"${ad.name}"已${ad.status==='投放中'?'通过审核，已投放':'被驳回，请修改后重新提交'}`,
-          time: ad.created,
-          status: ad.status
-        }, ...msgs]);
-      }
+    if (!user) return;
+    // 只读 localStorage 的余额
+    const b = localStorage.getItem('nonsence_balance');
+    setBalance(b ? Number(b) : 0);
+    // 查询广告、充值、发票等
+    axios.post(`${API_BASE}/myAds`, { userId: user._id }).then(res => {
+      if (res.data && res.data.ok) setAds(res.data.data);
     });
-    // 发票审核消息
-    if (Array.isArray(invoices)) {
-      invoices.forEach(inv => {
-        if ((inv.status === '已开票' || inv.status === '已驳回') && !msgs.find(m => m.type==='inv' && m.id===inv.id)) {
-          setMsgs(msgs => [{
-            id: inv.id,
-            type: 'inv',
-            title: `发票申请${inv.status==='已开票'?'已开票':'被驳回'}`,
-            content: `您的发票申请（抬头：${inv.title}，金额：￥${inv.amount}）${inv.status==='已开票'?'已开票':'被驳回，请检查信息'}`,
-            time: inv.time,
-            status: inv.status
-          }, ...msgs]);
-        }
-      });
-    }
-  }, [ads, invoices]);
+    axios.post(`${API_BASE}/rechargeHistory`, { userId: user._id }).then(res => {
+      if (res.data && res.data.ok) setRecharges(res.data.data);
+    });
+    axios.post(`${API_BASE}/invoiceHistory`, { userId: user._id }).then(res => {
+      if (res.data && res.data.ok) setInvoices(res.data.data);
+    });
+  }, [user]);
+
+  // 每次余额变化时持久化到 localStorage
+  useEffect(() => {
+    localStorage.setItem('nonsence_balance', String(balance));
+  }, [balance]);
 
   // 处理广告表单输入
   const handleChange = e => {
@@ -166,22 +105,44 @@ function ClientCenter({ user }) {
   };
 
   // 提交购买广告
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
+    setMsg('');
     if (!form.name.trim() || !form.budget.trim() || !form.start || !form.end || !form.material.trim()) {
       setMsg('请填写完整信息');
       return;
     }
-    const newAd = {
-      ...form,
-      id: Date.now(),
-      status: '待审核',
-      created: new Date().toLocaleString(),
-    };
-    setAds([newAd, ...ads]);
-    setForm({ type: '横幅广告', name: '', budget: '', start: '', end: '', material: '' });
-    setMsg('广告购买申请已提交，等待审核');
-    setTab('ads');
+    try {
+      const payload = {
+        userId: user && user._id ? user._id : user?.id,
+        type: form.type,
+        name: form.name,
+        budget: Number(form.budget),
+        start: form.start,
+        end: form.end,
+        material: form.material
+      };
+      if (!payload.userId || !payload.type || !payload.name || !payload.budget || !payload.start || !payload.end || !payload.material) {
+        setMsg('参数不完整'); return;
+      }
+      const res = await axios.post(`${API_BASE}/buyAd`, payload);
+      if (res.data && res.data.ok) {
+        setMsg('广告购买申请已提交，等待审核');
+        axios.post(`${API_BASE}/myAds`, { userId: payload.userId }).then(res => {
+          if (res.data && res.data.ok) setAds(res.data.data);
+        });
+        if (typeof res.data.balance === 'number') {
+          setBalance(res.data.balance);
+          localStorage.setItem('nonsence_balance', String(res.data.balance));
+        }
+        setForm({ type: '横幅广告', name: '', budget: '', start: '', end: '', material: '' });
+        setTab('ads');
+      } else {
+        setMsg(res.data.error || '购买失败');
+      }
+    } catch {
+      setMsg('网络错误');
+    }
   };
 
   // 处理充值表单输入
@@ -190,25 +151,34 @@ function ClientCenter({ user }) {
   };
 
   // 提交充值
-  const handleRecharge = e => {
+  const handleRecharge = async e => {
     e.preventDefault();
+    setRechargeMsg('');
     const amount = Number(rechargeForm.amount);
-    if (!amount || amount <= 0) {
-      setRechargeMsg('请输入正确的充值金额');
-      return;
-    }
-    const newRec = {
-      id: Date.now(),
+    const payload = {
+      userId: user && user._id ? user._id : user?.id,
       amount,
-      method: rechargeForm.method,
-      time: new Date().toLocaleString(),
-      status: '成功',
+      method: '微信支付'
     };
-    setBalance(balance + amount);
-    setRecharges([newRec, ...recharges]);
-    setRechargeForm({ amount: '', method: '支付宝' });
-    setRechargeMsg('充值成功！');
-    setTab('rechargeHistory');
+    if (!payload.userId || !payload.amount || payload.amount <= 0 || payload.method !== '微信支付') {
+      setRechargeMsg('参数错误'); return;
+    }
+    try {
+      const res = await axios.post(`${API_BASE}/recharge`, payload);
+      if (res.data && res.data.ok) {
+        setRechargeMsg('充值成功！');
+        setBalance(res.data.balance);
+        axios.post(`${API_BASE}/rechargeHistory`, { userId: payload.userId }).then(res => {
+          if (res.data && res.data.ok) setRecharges(res.data.data);
+        });
+        setRechargeForm({ amount: '', method: '微信支付' });
+        setTab('rechargeHistory');
+      } else {
+        setRechargeMsg(res.data.error || '充值失败');
+      }
+    } catch {
+      setRechargeMsg('网络错误');
+    }
   };
 
   // 处理广告数据类型筛选
@@ -221,49 +191,18 @@ function ClientCenter({ user }) {
     setInvoiceForm({ ...invoiceForm, [e.target.name]: e.target.value });
   };
 
-  // 提交发票申请
+  // 提交发票申请（本地模拟，后端可扩展）
   const handleInvoice = e => {
     e.preventDefault();
     if (!invoiceForm.rechargeId || !invoiceForm.title.trim() || !invoiceForm.taxId.trim()) {
       setInvoiceMsg('请填写完整信息');
       return;
     }
-    const recharge = recharges.find(r => String(r.id) === invoiceForm.rechargeId);
-    if (!recharge) {
-      setInvoiceMsg('请选择有效的充值记录');
-      return;
-    }
-    const newInvoice = {
-      id: Date.now(),
-      rechargeId: invoiceForm.rechargeId,
-      title: invoiceForm.title,
-      taxId: invoiceForm.taxId,
-      amount: recharge.amount,
-      time: new Date().toLocaleString(),
-      status: '待开票',
-    };
-    setInvoices([newInvoice, ...invoices]);
-    setInvoiceForm({ rechargeId: '', title: '', taxId: '' });
+    // 可扩展为后端接口
     setInvoiceMsg('发票申请已提交，等待处理');
   };
 
-  // 个人信息表单输入
-  const handleProfileChange = e => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
-
-  // 个人信息保存
-  const handleProfileSave = e => {
-    e.preventDefault();
-    if (!profile.nickname.trim() || !profile.email.trim() || !profile.phone.trim()) {
-      setProfileMsg('请填写完整信息');
-      return;
-    }
-    setProfileMsg('保存成功！');
-    setTimeout(() => setProfileMsg(''), 1500);
-  };
-
-  // 素材上传
+  // 素材上传（本地模拟）
   const handleMaterialUpload = e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -276,13 +215,13 @@ function ClientCenter({ user }) {
     reader.readAsDataURL(file);
   };
 
-  // 删除素材
+  // 删除素材（本地模拟）
   const handleMaterialDelete = id => {
     setMaterials(materials.filter(m => m.id !== id));
   };
 
-  // 过滤后的统计数据
-  const filteredStats = statsType === '全部' ? stats : stats.filter(ad => ad.type === statsType);
+  // 过滤后的统计数据（本地模拟）
+  const filteredStats = statsType === '全部' ? ads : ads.filter(ad => ad.type === statsType);
 
   // 简单柱状图渲染
   useEffect(() => {
@@ -337,23 +276,11 @@ function ClientCenter({ user }) {
           </ul>
         </aside>
         <main className="client-main">
+          {/* 显示当前登录账号信息 */}
+          <div style={{marginBottom: 24, textAlign: 'left', fontWeight: 500, color: '#6366f1', fontSize: 18}}>
+            当前账号：<span style={{color:'#222'}}>{user?.username}</span>
+          </div>
           <div className="balance-bar">账户余额：<span>￥{balance.toFixed(2)}</span></div>
-          {tab === 'msg' && (
-            <div>
-              <h2>消息中心</h2>
-              {msgs.length === 0 ? <p>暂无消息。</p> : (
-                <ul className="msg-list">
-                  {msgs.map((m,i) => (
-                    <li key={i} className={m.status==='投放中'||m.status==='已开票'?'msg-ok':'msg-err'}>
-                      <div className="msg-title">{m.title}</div>
-                      <div className="msg-content">{m.content}</div>
-                      <div className="msg-time">{m.time}</div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
           {tab === 'material' && (
             <div>
               <h2>广告素材管理</h2>
@@ -374,24 +301,6 @@ function ClientCenter({ user }) {
               </div>
             </div>
           )}
-          {tab === 'profile' && (
-            <div>
-              <h2>个人信息</h2>
-              <form className="profile-form" onSubmit={handleProfileSave}>
-                <label>昵称：
-                  <input name="nickname" value={profile.nickname} onChange={handleProfileChange} required />
-                </label>
-                <label>邮箱：
-                  <input name="email" value={profile.email} onChange={handleProfileChange} required />
-                </label>
-                <label>手机号：
-                  <input name="phone" value={profile.phone} onChange={handleProfileChange} required />
-                </label>
-                <button type="submit">保存</button>
-                {profileMsg && <div className="form-msg">{profileMsg}</div>}
-              </form>
-            </div>
-          )}
           {tab === 'ads' && (
             <div>
               <h2>我的广告</h2>
@@ -404,7 +313,7 @@ function ClientCenter({ user }) {
                   </thead>
                   <tbody>
                     {ads.map(ad => (
-                      <tr key={ad.id}>
+                      <tr key={ad._id}>
                         <td>{ad.name}</td>
                         <td>{ad.type}</td>
                         <td>￥{ad.budget}</td>
@@ -459,10 +368,8 @@ function ClientCenter({ user }) {
                   <input name="amount" type="number" min="1" value={rechargeForm.amount} onChange={handleRechargeChange} required />
                 </label>
                 <label>支付方式：
-                  <select name="method" value={rechargeForm.method} onChange={handleRechargeChange}>
-                    <option>支付宝</option>
+                  <select name="method" value={rechargeForm.method} onChange={handleRechargeChange} disabled>
                     <option>微信支付</option>
-                    <option>银行卡</option>
                   </select>
                 </label>
                 <button type="submit">立即充值</button>
@@ -480,7 +387,7 @@ function ClientCenter({ user }) {
                   </thead>
                   <tbody>
                     {recharges.map(rec => (
-                      <tr key={rec.id}>
+                      <tr key={rec._id}>
                         <td>{rec.time}</td>
                         <td>￥{rec.amount}</td>
                         <td>{rec.method}</td>
@@ -512,18 +419,17 @@ function ClientCenter({ user }) {
                 <table className="ads-table">
                   <thead>
                     <tr>
-                      <th>广告名称</th><th>类型</th><th>曝光量</th><th>点击量</th><th>点击率</th><th>消耗（元）</th>
+                      <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredStats.map(ad => (
-                      <tr key={ad.id}>
+                      <tr key={ad._id}>
                         <td>{ad.name}</td>
                         <td>{ad.type}</td>
-                        <td>{ad.impressions}</td>
-                        <td>{ad.clicks}</td>
-                        <td>{ad.ctr}%</td>
-                        <td>￥{ad.cost}</td>
+                        <td>￥{ad.budget}</td>
+                        <td>{ad.start} ~ {ad.end}</td>
+                        <td>{ad.status}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -539,7 +445,7 @@ function ClientCenter({ user }) {
                   <select name="rechargeId" value={invoiceForm.rechargeId} onChange={handleInvoiceChange} required>
                     <option value="">请选择</option>
                     {recharges.map(rec => (
-                      <option value={rec.id} key={rec.id}>￥{rec.amount} - {rec.time}</option>
+                      <option value={rec._id} key={rec._id}>￥{rec.amount} - {rec.time}</option>
                     ))}
                   </select>
                 </label>
@@ -560,13 +466,13 @@ function ClientCenter({ user }) {
                   </thead>
                   <tbody>
                     {invoices.map(inv => (
-                      <tr key={inv.id}>
+                      <tr key={inv._id}>
                         <td>{inv.time}</td>
                         <td>{inv.title}</td>
                         <td>{inv.taxId}</td>
                         <td>￥{inv.amount}</td>
                         <td>{(() => {
-                          const rec = recharges.find(r => String(r.id) === inv.rechargeId);
+                          const rec = recharges.find(r => String(r._id) === inv.rechargeId);
                           return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
                         })()}</td>
                         <td>{inv.status}</td>
@@ -587,10 +493,10 @@ function ClientCenter({ user }) {
                 </div>
                 <div className="faq-item">
                   <div className="faq-q">Q: 广告审核需要多久？</div>
-                  <div className="faq-a">A: 一般1个工作日内完成审核，审核结果会在"消息中心"通知。</div>
+                  <div className="faq-a">A: 一般1个工作日内完成审核，审核结果会在"我的广告"页面显示。</div>
                 </div>
                 <div className="faq-item">
-                  <div className="faq-q">Q: 如何充值和开具发票？</div>
+                  <div className="faq-q">Q: 如何充值和开票？</div>
                   <div className="faq-a">A: 在"充值"页面完成充值后，可在"发票管理"申请开票，管理员审核后开具。</div>
                 </div>
                 <div className="faq-item">

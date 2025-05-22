@@ -10,6 +10,9 @@ import Footer from './Footer';
 import ClientCenter from './ClientCenter';
 import ApiDoc from './ApiDoc';
 import AdminCenter from './AdminCenter';
+import axios from 'axios';
+
+const API_BASE = 'https://djck4ikhm4.hzh.sealos.run';
 
 function App() {
   const [page, setPage] = useState('home');
@@ -18,10 +21,13 @@ function App() {
     const u = localStorage.getItem('nonsence_user_login');
     return u ? JSON.parse(u) : null;
   });
-  const [userForm, setUserForm] = useState({ email: '', pwd: '' });
-  const [userReg, setUserReg] = useState({ email: '', pwd: '', nickname: '', phone: '' });
+  const [userForm, setUserForm] = useState({ username: '', password: '' });
   const [userMsg, setUserMsg] = useState('');
   const [showReg, setShowReg] = useState(false);
+  const [balance, setBalance] = useState(() => {
+    const b = localStorage.getItem('nonsence_balance');
+    return b ? Number(b) : 0;
+  });
 
   // 管理员登录
   const [adminLogged, setAdminLogged] = useState(() => localStorage.getItem('nonsence_admin_logged') === '1');
@@ -30,10 +36,49 @@ function App() {
   const ADMIN_USER = 'admin';
   const ADMIN_PWD = 'admin123';
 
-  // 广告主本地用户表
-  const USERLIST_STORAGE_KEY = 'nonsence_userlist';
-  let userList = [];
-  try { userList = JSON.parse(localStorage.getItem(USERLIST_STORAGE_KEY) || '[]'); } catch { userList = []; }
+  // 登录
+  const handleLogin = async e => {
+    e.preventDefault();
+    setUserMsg('');
+    if (!userForm.username || !userForm.password) {
+      setUserMsg('请填写完整信息'); return;
+    }
+    try {
+      const res = await axios.post(`${API_BASE}/loginOrRegister`, userForm);
+      if (res.data && res.data.ok) {
+        setUser(res.data.data);
+        setBalance(res.data.data.balance || 0);
+        localStorage.setItem('nonsence_user_login', JSON.stringify(res.data.data));
+        localStorage.setItem('nonsence_balance', String(res.data.data.balance || 0));
+      } else {
+        setUserMsg(res.data.error || '登录失败');
+      }
+    } catch {
+      setUserMsg('网络错误');
+    }
+  };
+
+  // 注册
+  const handleRegister = async e => {
+    e.preventDefault();
+    setUserMsg('');
+    if (!userForm.username || !userForm.password) {
+      setUserMsg('请填写完整信息'); return;
+    }
+    try {
+      const res = await axios.post(`${API_BASE}/register`, userForm);
+      if (res.data && res.data.ok) {
+        setUser(res.data.data);
+        setBalance(res.data.data.balance || 0);
+        localStorage.setItem('nonsence_user_login', JSON.stringify(res.data.data));
+        localStorage.setItem('nonsence_balance', String(res.data.data.balance || 0));
+      } else {
+        setUserMsg(res.data.error || '注册失败');
+      }
+    } catch {
+      setUserMsg('网络错误');
+    }
+  };
 
   let content;
   if (page === 'home') content = <Home />;
@@ -44,51 +89,37 @@ function App() {
       content = (
         <div style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
           <h2 style={{textAlign:'center',color:'#1976d2'}}>{showReg ? '广告主注册' : '广告主登录'}</h2>
-          {showReg ? (
-            <form onSubmit={e => {
-              e.preventDefault();
-              if (!userReg.email || !userReg.pwd || !userReg.nickname || !userReg.phone) {
-                setUserMsg('请填写完整信息'); return;
-              }
-              if (userList.find(u => u.email === userReg.email)) {
-                setUserMsg('该邮箱已注册'); return;
-              }
-              const newUser = { ...userReg, id: Date.now(), enabled: true };
-              localStorage.setItem(USERLIST_STORAGE_KEY, JSON.stringify([newUser, ...userList]));
-              setUser(newUser);
-              localStorage.setItem('nonsence_user_login', JSON.stringify(newUser));
-            }} style={{display:'flex',flexDirection:'column',gap:18}}>
-              <label>邮箱：<input value={userReg.email} onChange={e=>setUserReg(f=>({...f,email:e.target.value}))} required /></label>
-              <label>密码：<input type="password" value={userReg.pwd} onChange={e=>setUserReg(f=>({...f,pwd:e.target.value}))} required /></label>
-              <label>昵称：<input value={userReg.nickname} onChange={e=>setUserReg(f=>({...f,nickname:e.target.value}))} required /></label>
-              <label>手机号：<input value={userReg.phone} onChange={e=>setUserReg(f=>({...f,phone:e.target.value}))} required /></label>
-              <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'8px 0',fontSize:'1.08rem',marginTop:8}}>注册</button>
-              {userMsg && <div style={{color:'#e57373',marginTop:4}}>{userMsg}</div>}
-            </form>
-          ) : (
-            <form onSubmit={e => {
-              e.preventDefault();
-              const u = userList.find(u => u.email === userForm.email && u.pwd === userForm.pwd);
-              if (!u) { setUserMsg('账号或密码错误'); return; }
-              if (!u.enabled) { setUserMsg('账号已被禁用'); return; }
-              setUser(u);
-              localStorage.setItem('nonsence_user_login', JSON.stringify(u));
-            }} style={{display:'flex',flexDirection:'column',gap:18}}>
-              <label>邮箱：<input value={userForm.email} onChange={e=>setUserForm(f=>({...f,email:e.target.value}))} required /></label>
-              <label>密码：<input type="password" value={userForm.pwd} onChange={e=>setUserForm(f=>({...f,pwd:e.target.value}))} required /></label>
-              <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'8px 0',fontSize:'1.08rem',marginTop:8}}>登录</button>
-              {userMsg && <div style={{color:'#e57373',marginTop:4}}>{userMsg}</div>}
-            </form>
-          )}
+          <form onSubmit={showReg ? handleRegister : handleLogin}>
+            <label>用户名：<input name="username" value={userForm.username} onChange={e=>setUserForm(f=>({...f,username:e.target.value}))} required /></label>
+            <label>密码：<input name="password" type="password" value={userForm.password} onChange={e=>setUserForm(f=>({...f,password:e.target.value}))} required /></label>
+            <button type="submit" style={{width:'100%',marginTop:18}}>{showReg ? '注册' : '登录'}</button>
+          </form>
+          {userMsg && <div className="form-msg" style={{marginTop:12}}>{userMsg}</div>}
           <div style={{marginTop:18,textAlign:'center'}}>
-            <button style={{background:'none',border:'none',color:'#1976d2',cursor:'pointer'}} onClick={()=>{setShowReg(r=>!r);setUserMsg('');}}>
-              {showReg ? '已有账号？去登录' : '没有账号？去注册'}
-            </button>
+            {showReg ? (
+              <span>已有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(false);setUserMsg('');}}>去登录</a></span>
+            ) : (
+              <span>没有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(true);setUserMsg('');}}>去注册</a></span>
+            )}
           </div>
         </div>
       );
     } else {
-      content = <ClientCenter user={user} />;
+      content = (
+        <div>
+          <button
+            style={{position:'absolute',right:30,top:30,zIndex:10,background:'#e57373',color:'#fff',border:'none',borderRadius:4,padding:'6px 16px',cursor:'pointer'}}
+            onClick={() => {
+              setUser(null);
+              localStorage.removeItem('nonsence_user_login');
+              setUserMsg('');
+            }}
+          >
+            退出登录
+          </button>
+          <ClientCenter user={user} balance={balance} />
+        </div>
+      );
     }
   }
   else if (page === 'admin') {
