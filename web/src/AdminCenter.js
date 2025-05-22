@@ -20,6 +20,7 @@ function AdminCenter() {
   const [pwd, setPwd] = useState('');
   const [pwdMsg, setPwdMsg] = useState('');
   const [ads, setAds] = useState([]);
+  const [reviewedAds, setReviewedAds] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [recharges, setRecharges] = useState([]);
   const [userList, setUserList] = useState([]);
@@ -88,6 +89,22 @@ function AdminCenter() {
     if (!unlocked) return;
     if (tab === 'msg') fetchMessages();
     if (tab === 'discuss') fetchDiscussions();
+    if (tab === 'adReview') {
+      axios.post(`${API_BASE}/adsReview`, { action: 'getPendingAds' }).then(res => {
+        if (res.data && res.data.ok) setAds(res.data.data);
+        else setAds([]);
+      });
+      axios.post(`${API_BASE}/adsReview`, { action: 'getReviewedAds' }).then(res => {
+        if (res.data && res.data.ok) setReviewedAds(res.data.data);
+        else setReviewedAds([]);
+      });
+    }
+    if (tab === 'user') {
+      axios.post(`${API_BASE}/userAdmin`, { action: 'getUsers' }).then(res => {
+        if (res.data && res.data.ok) setUserList(res.data.data);
+        else setUserList([]);
+      });
+    }
     // eslint-disable-next-line
   }, [tab, unlocked]);
 
@@ -123,8 +140,22 @@ function AdminCenter() {
   }, [userList]);
 
   // 广告审核操作
-  const handleReview = (id, status) => {
-    setAds(ads.map(ad => ad.id === id ? { ...ad, status } : ad));
+  const handleReview = (adId, actionType) => {
+    axios.post(`${API_BASE}/adsReview`, { action: 'reviewAd', adId, actionType })
+      .then(res => {
+        if (res.data && res.data.ok) {
+          axios.post(`${API_BASE}/adsReview`, { action: 'getPendingAds' }).then(res => {
+            if (res.data && res.data.ok) setAds(res.data.data);
+            else setAds([]);
+          });
+          axios.post(`${API_BASE}/adsReview`, { action: 'getReviewedAds' }).then(res => {
+            if (res.data && res.data.ok) setReviewedAds(res.data.data);
+            else setReviewedAds([]);
+          });
+        } else {
+          alert(res.data.error || '操作失败');
+        }
+      });
   };
 
   // 发票审核操作
@@ -135,6 +166,22 @@ function AdminCenter() {
   // 用户禁用/启用
   const handleUserEnable = (id, enabled) => {
     setUserList(userList.map(u => u.id === id ? { ...u, enabled } : u));
+  };
+
+  // 删除用户
+  const handleUserDelete = (userId) => {
+    if (!window.confirm('确定要删除该用户吗？')) return;
+    axios.post(`${API_BASE}/userAdmin`, { action: 'deleteUser', userId })
+      .then(res => {
+        if (res.data && res.data.ok) {
+          axios.post(`${API_BASE}/userAdmin`, { action: 'getUsers' }).then(res => {
+            if (res.data && res.data.ok) setUserList(res.data.data);
+            else setUserList([]);
+          });
+        } else {
+          alert(res.data.error || '操作失败');
+        }
+      });
   };
 
   // 平台数据统计
@@ -208,14 +255,14 @@ function AdminCenter() {
           {tab === 'adReview' && (
             <div>
               <h2>广告审核</h2>
-              {ads.filter(ad => ad.status === '待审核').length === 0 ? <p>暂无待审核广告。</p> : (
+              {ads.length === 0 ? <p>暂无待审核广告。</p> : (
                 <table className="ads-table">
                   <thead>
                     <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>操作</th></tr>
                   </thead>
                   <tbody>
-                    {ads.filter(ad => ad.status === '待审核').map(ad => (
-                      <tr key={ad.id}>
+                    {ads.map(ad => (
+                      <tr key={ad._id}>
                         <td>{ad.name}</td>
                         <td>{ad.type}</td>
                         <td>￥{ad.budget}</td>
@@ -223,8 +270,8 @@ function AdminCenter() {
                         <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
                         <td>{ad.created}</td>
                         <td>
-                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleReview(ad.id,'投放中')}>通过</button>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleReview(ad.id,'已驳回')}>驳回</button>
+                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleReview(ad._id,'approve')}>通过</button>
+                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleReview(ad._id,'reject')}>驳回</button>
                         </td>
                       </tr>
                     ))}
@@ -232,14 +279,14 @@ function AdminCenter() {
                 </table>
               )}
               <h3 style={{marginTop:32}}>已审核广告</h3>
-              {ads.filter(ad => ad.status !== '待审核').length === 0 ? <p>暂无已审核广告。</p> : (
+              {reviewedAds.length === 0 ? <p>暂无已审核广告。</p> : (
                 <table className="ads-table">
                   <thead>
                     <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>状态</th></tr>
                   </thead>
                   <tbody>
-                    {ads.filter(ad => ad.status !== '待审核').map(ad => (
-                      <tr key={ad.id}>
+                    {reviewedAds.map(ad => (
+                      <tr key={ad._id}>
                         <td>{ad.name}</td>
                         <td>{ad.type}</td>
                         <td>￥{ad.budget}</td>
@@ -313,21 +360,16 @@ function AdminCenter() {
               {userList.length === 0 ? <p>暂无广告主。</p> : (
                 <table className="ads-table">
                   <thead>
-                    <tr><th>昵称</th><th>邮箱</th><th>手机号</th><th>状态</th><th>操作</th></tr>
+                    <tr><th>用户名</th><th>注册时间</th><th>余额</th><th>操作</th></tr>
                   </thead>
                   <tbody>
                     {userList.map(u => (
-                      <tr key={u.id}>
-                        <td>{u.nickname}</td>
-                        <td>{u.email}</td>
-                        <td>{u.phone}</td>
-                        <td>{u.enabled ? '正常' : '已禁用'}</td>
+                      <tr key={u._id}>
+                        <td>{u.username}</td>
+                        <td>{u.createdAt}</td>
+                        <td>￥{u.balance}</td>
                         <td>
-                          {u.enabled ? (
-                            <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleUserEnable(u.id,false)}>禁用</button>
-                          ) : (
-                            <button style={{background:'#43a047',color:'#fff'}} onClick={()=>handleUserEnable(u.id,true)}>启用</button>
-                          )}
+                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleUserDelete(u._id)}>删除</button>
                         </td>
                       </tr>
                     ))}
