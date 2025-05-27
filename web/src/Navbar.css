@@ -1,9 +1,19 @@
 .navbar {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 24px;
   background: #222;
   padding: 16px 0;
+  position: relative;
+  min-height: 56px;
+}
+
+.navbar > div:first-child {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
 }
 
 .navbar button {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import './ClientCenter.css';
 import './App.css'; // 确保样式可用
@@ -14,18 +14,13 @@ const menu = [
 
 const API_BASE = 'https://djck4ikhm4.hzh.sealos.run';
 
-function AdminCenter() {
-  const [tab, setTab] = useState('adReview');
-  const [unlocked, setUnlocked] = useState(false);
-  const [pwd, setPwd] = useState('');
-  const [pwdMsg, setPwdMsg] = useState('');
+function AdminCenter({ tab, setTab }) {
   const [ads, setAds] = useState([]);
   const [reviewedAds, setReviewedAds] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [recharges, setRecharges] = useState([]);
   const [userList, setUserList] = useState([]);
   const chartRef = useRef(null);
-
   // 留言/讨论数据
   const [messages, setMessages] = useState([]);
   const [discussions, setDiscussions] = useState([]);
@@ -86,7 +81,6 @@ function AdminCenter() {
   };
 
   useEffect(() => {
-    if (!unlocked) return;
     if (tab === 'msg') fetchMessages();
     if (tab === 'discuss') fetchDiscussions();
     if (tab === 'adReview') {
@@ -106,7 +100,7 @@ function AdminCenter() {
       });
     }
     // eslint-disable-next-line
-  }, [tab, unlocked]);
+  }, [tab]);
 
   // 加载本地数据
   useEffect(() => {
@@ -216,237 +210,205 @@ function AdminCenter() {
     ctx.fillStyle = '#e57373'; ctx.fillRect(200,250,16,16); ctx.fillStyle='#333'; ctx.fillText('已驳回',220,263);
   }, [tab, adStatusCount]);
 
-  // 密码解锁
-  if (!unlocked) {
-    return (
-      <div className="page-card" style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
-        <h2 style={{textAlign:'center',color:'#1976d2'}}>管理员中心</h2>
-        <form onSubmit={e => {
-          e.preventDefault();
-          if (pwd === '123456') {
-            setUnlocked(true);
-            setPwdMsg('');
-          } else {
-            setPwdMsg('密码错误');
-          }
-        }} style={{display:'flex',flexDirection:'column',gap:18}}>
-          <label>请输入管理员密码：<input type="password" value={pwd} onChange={e=>setPwd(e.target.value)} required /></label>
-          <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'8px 0',fontSize:'1.08rem',marginTop:8}}>进入</button>
-          {pwdMsg && <div style={{color:'#e57373',marginTop:4}}>{pwdMsg}</div>}
-        </form>
-      </div>
-    );
-  }
-
   return (
-    <div className="page-card">
-      <div className="page-banner">管理员中心</div>
-      <div className="page-section-title">广告审核</div>
-      <div className="client-center">
-        <aside className="client-sidebar">
-          <h3>管理员中心</h3>
-          <ul>
-            {menu.map(item => (
-              <li key={item.key} className={tab===item.key ? 'active' : ''} onClick={()=>setTab(item.key)}>{item.label}</li>
-            ))}
-          </ul>
-        </aside>
-        <main className="client-main">
-          {tab === 'adReview' && (
-            <div>
-              <h2>广告审核</h2>
-              {ads.length === 0 ? <p>暂无待审核广告。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>操作</th></tr>
-                  </thead>
-                  <tbody>
-                    {ads.map(ad => (
-                      <tr key={ad._id}>
-                        <td>{ad.name}</td>
-                        <td>{ad.type}</td>
-                        <td>￥{ad.budget}</td>
-                        <td>{ad.start} ~ {ad.end}</td>
-                        <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
-                        <td>{ad.created}</td>
-                        <td>
-                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleReview(ad._id,'approve')}>通过</button>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleReview(ad._id,'reject')}>驳回</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              <h3 style={{marginTop:32}}>已审核广告</h3>
-              {reviewedAds.length === 0 ? <p>暂无已审核广告。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>状态</th></tr>
-                  </thead>
-                  <tbody>
-                    {reviewedAds.map(ad => (
-                      <tr key={ad._id}>
-                        <td>{ad.name}</td>
-                        <td>{ad.type}</td>
-                        <td>￥{ad.budget}</td>
-                        <td>{ad.start} ~ {ad.end}</td>
-                        <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
-                        <td>{ad.created}</td>
-                        <td>{ad.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+    <div className="client-center">
+      <main className="client-main">
+        {tab === 'adReview' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>广告审核</h2>
+            {ads.length === 0 ? <p style={{textAlign:'center'}}>暂无待审核广告。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {ads.map(ad => (
+                    <tr key={ad._id}>
+                      <td>{ad.name}</td>
+                      <td>{ad.type}</td>
+                      <td>￥{ad.budget}</td>
+                      <td>{ad.start} ~ {ad.end}</td>
+                      <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
+                      <td>{ad.created}</td>
+                      <td>
+                        <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleReview(ad._id,'approve')}>通过</button>
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleReview(ad._id,'reject')}>驳回</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <h3 style={{marginTop:32, textAlign:'center'}}>已审核广告</h3>
+            {reviewedAds.length === 0 ? <p style={{textAlign:'center'}}>暂无已审核广告。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>提交时间</th><th>状态</th></tr>
+                </thead>
+                <tbody>
+                  {reviewedAds.map(ad => (
+                    <tr key={ad._id}>
+                      <td>{ad.name}</td>
+                      <td>{ad.type}</td>
+                      <td>￥{ad.budget}</td>
+                      <td>{ad.start} ~ {ad.end}</td>
+                      <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
+                      <td>{ad.created}</td>
+                      <td>{ad.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        {tab === 'invoiceReview' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>发票审核</h2>
+            {invoices.filter(inv => inv.status === '待开票').length === 0 ? <p style={{textAlign:'center'}}>暂无待开票申请。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {invoices.filter(inv => inv.status === '待开票').map(inv => (
+                    <tr key={inv.id}>
+                      <td>{inv.time}</td>
+                      <td>{inv.title}</td>
+                      <td>{inv.taxId}</td>
+                      <td>￥{inv.amount}</td>
+                      <td>{(() => {
+                        const rec = recharges.find(r => String(r.id) === inv.rechargeId);
+                        return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
+                      })()}</td>
+                      <td>
+                        <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleInvoiceReview(inv.id,'已开票')}>开票</button>
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleInvoiceReview(inv.id,'已驳回')}>驳回</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <h3 style={{marginTop:32, textAlign:'center'}}>已处理申请</h3>
+            {invoices.filter(inv => inv.status !== '待开票').length === 0 ? <p style={{textAlign:'center'}}>暂无已处理申请。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
+                </thead>
+                <tbody>
+                  {invoices.filter(inv => inv.status !== '待开票').map(inv => (
+                    <tr key={inv.id}>
+                      <td>{inv.time}</td>
+                      <td>{inv.title}</td>
+                      <td>{inv.taxId}</td>
+                      <td>￥{inv.amount}</td>
+                      <td>{(() => {
+                        const rec = recharges.find(r => String(r.id) === inv.rechargeId);
+                        return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
+                      })()}</td>
+                      <td>{inv.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        {tab === 'user' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>用户管理</h2>
+            {userList.length === 0 ? <p style={{textAlign:'center'}}>暂无广告主。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>用户名</th><th>注册时间</th><th>余额</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {userList.map(u => (
+                    <tr key={u._id}>
+                      <td>{u.username}</td>
+                      <td>{u.createdAt}</td>
+                      <td>￥{u.balance}</td>
+                      <td>
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleUserDelete(u._id)}>删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+        {tab === 'stats' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>平台数据</h2>
+            <div className="platform-stats" style={{justifyContent:'center'}}>
+              <div className="stat-card">广告总数<br /><span>{totalAds}</span></div>
+              <div className="stat-card">充值总额<br /><span>￥{totalRecharge.toFixed(2)}</span></div>
+              <div className="stat-card">广告主数<br /><span>{totalUsers}</span></div>
+              <div className="stat-card">发票总数<br /><span>{totalInvoices}</span></div>
             </div>
-          )}
-          {tab === 'invoiceReview' && (
-            <div>
-              <h2>发票审核</h2>
-              {invoices.filter(inv => inv.status === '待开票').length === 0 ? <p>暂无待开票申请。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>操作</th></tr>
-                  </thead>
-                  <tbody>
-                    {invoices.filter(inv => inv.status === '待开票').map(inv => (
-                      <tr key={inv.id}>
-                        <td>{inv.time}</td>
-                        <td>{inv.title}</td>
-                        <td>{inv.taxId}</td>
-                        <td>￥{inv.amount}</td>
-                        <td>{(() => {
-                          const rec = recharges.find(r => String(r.id) === inv.rechargeId);
-                          return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
-                        })()}</td>
-                        <td>
-                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleInvoiceReview(inv.id,'已开票')}>开票</button>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleInvoiceReview(inv.id,'已驳回')}>驳回</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              <h3 style={{marginTop:32}}>已处理申请</h3>
-              {invoices.filter(inv => inv.status !== '待开票').length === 0 ? <p>暂无已处理申请。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
-                  </thead>
-                  <tbody>
-                    {invoices.filter(inv => inv.status !== '待开票').map(inv => (
-                      <tr key={inv.id}>
-                        <td>{inv.time}</td>
-                        <td>{inv.title}</td>
-                        <td>{inv.taxId}</td>
-                        <td>￥{inv.amount}</td>
-                        <td>{(() => {
-                          const rec = recharges.find(r => String(r.id) === inv.rechargeId);
-                          return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
-                        })()}</td>
-                        <td>{inv.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'user' && (
-            <div>
-              <h2>用户管理</h2>
-              {userList.length === 0 ? <p>暂无广告主。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>用户名</th><th>注册时间</th><th>余额</th><th>操作</th></tr>
-                  </thead>
-                  <tbody>
-                    {userList.map(u => (
-                      <tr key={u._id}>
-                        <td>{u.username}</td>
-                        <td>{u.createdAt}</td>
-                        <td>￥{u.balance}</td>
-                        <td>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleUserDelete(u._id)}>删除</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'stats' && (
-            <div>
-              <h2>平台数据</h2>
-              <div className="platform-stats">
-                <div className="stat-card">广告总数<br /><span>{totalAds}</span></div>
-                <div className="stat-card">充值总额<br /><span>￥{totalRecharge.toFixed(2)}</span></div>
-                <div className="stat-card">广告主数<br /><span>{totalUsers}</span></div>
-                <div className="stat-card">发票总数<br /><span>{totalInvoices}</span></div>
-              </div>
-              <div style={{marginTop:32}}>
-                <h3>广告状态分布</h3>
+            <div style={{marginTop:32}}>
+              <h3 style={{textAlign:'center'}}>广告状态分布</h3>
+              <div style={{display:'flex', justifyContent:'center'}}>
                 <canvas ref={chartRef} width={300} height={280} style={{background:'#f4f6fa',borderRadius:8}} />
               </div>
             </div>
-          )}
-          {tab === 'msg' && (
-            <div>
-              <h2>留言管理</h2>
-              {loading ? <p>加载中...</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
-                  </thead>
-                  <tbody>
-                    {messages.map(m => (
-                      <tr key={m._id}>
-                        <td>{m.nickname}</td>
-                        <td>{m.content}</td>
-                        <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
-                        <td>
-                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,2)}>通过</button>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,2)}>删除</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {msg && <div style={{color:'#e57373',marginTop:8}}>{msg}</div>}
-            </div>
-          )}
-          {tab === 'discuss' && (
-            <div>
-              <h2>讨论审核</h2>
-              {loading ? <p>加载中...</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
-                  </thead>
-                  <tbody>
-                    {discussions.map(m => (
-                      <tr key={m._id}>
-                        <td>{m.nickname}</td>
-                        <td>{m.content}</td>
-                        <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
-                        <td>
-                          <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,1)}>通过</button>
-                          <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,1)}>删除</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {msg && <div style={{color:'#e57373',marginTop:8}}>{msg}</div>}
-            </div>
-          )}
-        </main>
-      </div>
+          </div>
+        )}
+        {tab === 'msg' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>留言管理</h2>
+            {loading ? <p style={{textAlign:'center'}}>加载中...</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {messages.map(m => (
+                    <tr key={m._id}>
+                      <td>{m.nickname}</td>
+                      <td>{m.content}</td>
+                      <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
+                      <td>
+                        <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,2)}>通过</button>
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,2)}>删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {msg && <div style={{color:'#e57373',marginTop:8, textAlign:'center'}}>{msg}</div>}
+          </div>
+        )}
+        {tab === 'discuss' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>讨论审核</h2>
+            {loading ? <p style={{textAlign:'center'}}>加载中...</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>昵称</th><th>内容</th><th>时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {discussions.map(m => (
+                    <tr key={m._id}>
+                      <td>{m.nickname}</td>
+                      <td>{m.content}</td>
+                      <td>{m.created ? new Date(m.created).toLocaleString() : ''}</td>
+                      <td>
+                        <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleAudit(m._id,1,1)}>通过</button>
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleAudit(m._id,2,1)}>删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {msg && <div style={{color:'#e57373',marginTop:8, textAlign:'center'}}>{msg}</div>}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

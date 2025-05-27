@@ -31,8 +31,9 @@ function App() {
 
   // 管理员登录
   const [adminLogged, setAdminLogged] = useState(() => localStorage.getItem('nonsence_admin_logged') === '1');
-  const [adminForm, setAdminForm] = useState({ user: '', pwd: '' });
+  const [adminForm, setAdminForm] = useState({ pwd: '' });
   const [adminMsg, setAdminMsg] = useState('');
+  const [adminTab, setAdminTab] = useState('adReview');
   const ADMIN_USER = 'admin';
   const ADMIN_PWD = 'admin123';
 
@@ -80,47 +81,50 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('nonsence_user_login');
+    setUserMsg('');
+    setPage('home');
+  };
+
+  const handleAdminLogout = () => {
+    setAdminLogged(false);
+    localStorage.removeItem('nonsence_admin_logged');
+    setAdminMsg('');
+    setPage('home');
+  };
+
   let content;
+  let showSidebar = false;
+  if (page.startsWith('client') && user) showSidebar = true;
+  if (page === 'admin' && adminLogged) showSidebar = true;
+
   if (page === 'home') content = <Home />;
   else if (page === 'cases') content = <Cases />;
   else if (page === 'messages') content = <MessageBoard />;
-  else if (page === 'client') {
-    if (!user) {
-      content = (
-        <div style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
-          <h2 style={{textAlign:'center',color:'#1976d2'}}>{showReg ? '广告主注册' : '广告主登录'}</h2>
-          <form onSubmit={showReg ? handleRegister : handleLogin}>
-            <label>用户名：<input name="username" value={userForm.username} onChange={e=>setUserForm(f=>({...f,username:e.target.value}))} required /></label>
-            <label>密码：<input name="password" type="password" value={userForm.password} onChange={e=>setUserForm(f=>({...f,password:e.target.value}))} required /></label>
-            <button type="submit" style={{width:'100%',marginTop:18}}>{showReg ? '注册' : '登录'}</button>
-          </form>
-          {userMsg && <div className="form-msg" style={{marginTop:12}}>{userMsg}</div>}
-          <div style={{marginTop:18,textAlign:'center'}}>
-            {showReg ? (
-              <span>已有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(false);setUserMsg('');}}>去登录</a></span>
-            ) : (
-              <span>没有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(true);setUserMsg('');}}>去注册</a></span>
-            )}
-          </div>
+  else if (page === 'client' && !user) {
+    content = (
+      <div style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
+        <h2 style={{textAlign:'center',color:'#1976d2'}}>{showReg ? '广告主注册' : '广告主登录'}</h2>
+        <form onSubmit={showReg ? async e => { await handleRegister(e); setPage('client_ads'); } : async e => { await handleLogin(e); setPage('client_ads'); }}>
+          <label>用户名：<input name="username" value={userForm.username} onChange={e=>setUserForm(f=>({...f,username:e.target.value}))} required /></label>
+          <label>密码：<input name="password" type="password" value={userForm.password} onChange={e=>setUserForm(f=>({...f,password:e.target.value}))} required /></label>
+          <button type="submit" style={{width:'100%',marginTop:18}}>{showReg ? '注册' : '登录'}</button>
+        </form>
+        {userMsg && <div className="form-msg" style={{marginTop:12}}>{userMsg}</div>}
+        <div style={{marginTop:18,textAlign:'center'}}>
+          {showReg ? (
+            <span>已有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(false);setUserMsg('');}}>去登录</a></span>
+          ) : (
+            <span>没有账号？<a href="#" onClick={e=>{e.preventDefault();setShowReg(true);setUserMsg('');}}>去注册</a></span>
+          )}
         </div>
-      );
-    } else {
-      content = (
-        <div>
-          <button
-            style={{position:'absolute',right:30,top:30,zIndex:10,background:'#e57373',color:'#fff',border:'none',borderRadius:4,padding:'6px 16px',cursor:'pointer'}}
-            onClick={() => {
-              setUser(null);
-              localStorage.removeItem('nonsence_user_login');
-              setUserMsg('');
-            }}
-          >
-            退出登录
-          </button>
-          <ClientCenter user={user} balance={balance} />
-        </div>
-      );
-    }
+      </div>
+    );
+  }
+  else if (page.startsWith('client') && user) {
+    content = <ClientCenter user={user} page={page} />;
   }
   else if (page === 'admin') {
     if (!adminLogged) {
@@ -129,14 +133,13 @@ function App() {
           <h2 style={{textAlign:'center',color:'#1976d2'}}>管理员登录</h2>
           <form onSubmit={e => {
             e.preventDefault();
-            if (adminForm.user === ADMIN_USER && adminForm.pwd === ADMIN_PWD) {
+            if (adminForm.pwd === '123456') {
               setAdminLogged(true);
               localStorage.setItem('nonsence_admin_logged', '1');
             } else {
-              setAdminMsg('账号或密码错误');
+              setAdminMsg('密码错误');
             }
           }} style={{display:'flex',flexDirection:'column',gap:18}}>
-            <label>账号：<input value={adminForm.user} onChange={e=>setAdminForm(f=>({...f,user:e.target.value}))} required /></label>
             <label>密码：<input type="password" value={adminForm.pwd} onChange={e=>setAdminForm(f=>({...f,pwd:e.target.value}))} required /></label>
             <button type="submit" style={{background:'#1976d2',color:'#fff',border:'none',borderRadius:4,padding:'8px 0',fontSize:'1.08rem',marginTop:8}}>登录</button>
             {adminMsg && <div style={{color:'#e57373',marginTop:4}}>{adminMsg}</div>}
@@ -144,7 +147,7 @@ function App() {
         </div>
       );
     } else {
-      content = <AdminCenter />;
+      content = <AdminCenter tab={adminTab} setTab={setAdminTab} />;
     }
   }
   else if (page === 'api') content = <ApiDoc />;
@@ -153,9 +156,17 @@ function App() {
 
   return (
     <div className="App">
-      <Sidebar setPage={setPage} current={page} />
-      <Navbar setPage={setPage} current={page} />
-      <div className="App-content" style={{marginLeft:180}}>
+      {showSidebar && <Sidebar setPage={setPage} current={page} adminTab={adminTab} setAdminTab={setAdminTab} />}
+      <Navbar
+        setPage={setPage}
+        current={page}
+        user={user}
+        adminLogged={adminLogged}
+        onLogout={handleLogout}
+        onAdminLogout={handleAdminLogout}
+        setShowReg={setShowReg}
+      />
+      <div className="App-content" style={showSidebar ? {marginLeft:180} : {}}>
         {content}
       </div>
       <Footer />

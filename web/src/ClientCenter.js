@@ -5,39 +5,8 @@ import axios from 'axios';
 
 const API_BASE = 'https://djck4ikhm4.hzh.sealos.run';
 
-const menu = [
-  // { key: 'profile', label: '个人信息' }, // 删除个人信息菜单
-  { key: 'ads', label: '我的广告' },
-  { key: 'buy', label: '购买广告' },
-  { key: 'material', label: '广告素材管理' },
-  { key: 'recharge', label: '充值' },
-  { key: 'rechargeHistory', label: '充值历史' },
-  { key: 'stats', label: '广告数据' },
-  { key: 'invoice', label: '发票管理' },
-  { key: 'help', label: '帮助中心' },
-];
-
-const AD_STORAGE_KEY = 'nonsence_ads';
-const RECHARGE_STORAGE_KEY = 'nonsence_recharges';
-const BALANCE_STORAGE_KEY = 'nonsence_balance';
-const INVOICE_STORAGE_KEY = 'nonsence_invoices';
-const PROFILE_STORAGE_KEY = 'nonsence_profile';
-const MATERIAL_STORAGE_KEY = 'nonsence_materials';
-const MSG_STORAGE_KEY = 'nonsence_msgs';
-
-// 模拟广告数据统计
-function mockStats(ads) {
-  return ads.map(ad => ({
-    ...ad,
-    impressions: Math.floor(Math.random() * 10000 + 1000),
-    clicks: Math.floor(Math.random() * 1000 + 100),
-    cost: Number(ad.budget) - Math.floor(Math.random() * 100),
-    ctr: 0, // 点击率
-  })).map(ad => ({ ...ad, ctr: ad.impressions ? (ad.clicks / ad.impressions * 100).toFixed(2) : '0.00' }));
-}
-
-function ClientCenter({ user }) {
-  const [tab, setTab] = useState('ads');
+function ClientCenter({ user, page }) {
+  const tab = page.replace('client_', '');
   const [ads, setAds] = useState([]);
   const [form, setForm] = useState({
     type: '横幅广告',
@@ -136,7 +105,6 @@ function ClientCenter({ user }) {
           localStorage.setItem('nonsence_balance', String(res.data.balance));
         }
         setForm({ type: '横幅广告', name: '', budget: '', start: '', end: '', material: '' });
-        setTab('ads');
       } else {
         setMsg(res.data.error || '购买失败');
       }
@@ -172,7 +140,6 @@ function ClientCenter({ user }) {
           if (res.data && res.data.ok) setRecharges(res.data.data);
         });
         setRechargeForm({ amount: '', method: '微信支付' });
-        setTab('rechargeHistory');
       } else {
         setRechargeMsg(res.data.error || '充值失败');
       }
@@ -264,255 +231,241 @@ function ClientCenter({ user }) {
   }, [tab, filteredStats]);
 
   return (
-    <div className="page-card">
-      <div className="page-banner">广告主中心</div>
-      <div className="client-center">
-        <aside className="client-sidebar">
-          <h3>广告主中心</h3>
-          <ul>
-            {menu.map(item => (
-              <li key={item.key} className={tab===item.key ? 'active' : ''} onClick={()=>setTab(item.key)}>{item.label}</li>
-            ))}
-          </ul>
-        </aside>
-        <main className="client-main">
-          {/* 显示当前登录账号信息 */}
-          <div style={{marginBottom: 24, textAlign: 'left', fontWeight: 500, color: '#6366f1', fontSize: 18}}>
-            当前账号：<span style={{color:'#222'}}>{user?.username}</span>
-          </div>
-          <div className="balance-bar">账户余额：<span>￥{balance.toFixed(2)}</span></div>
-          {tab === 'material' && (
-            <div>
-              <h2>广告素材管理</h2>
-              <input type="file" accept="image/*" onChange={handleMaterialUpload} />
-              {materialMsg && <div className="form-msg">{materialMsg}</div>}
-              <div className="material-list">
-                {materials.length === 0 ? <p>暂无素材，请上传。</p> : (
-                  <ul>
-                    {materials.map(m => (
-                      <li key={m.id}>
-                        <img src={m.url} alt={m.name} />
-                        <div className="mat-name">{m.name}</div>
-                        <button onClick={() => handleMaterialDelete(m.id)}>删除</button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-          {tab === 'ads' && (
-            <div>
-              <h2>我的广告</h2>
-              {ads.length === 0 ? <p>暂无广告，请先购买。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr>
-                      <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th><th>操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ads.map(ad => (
-                      <tr key={ad._id}>
-                        <td>{ad.name}</td>
-                        <td>{ad.type}</td>
-                        <td>￥{ad.budget}</td>
-                        <td>{ad.start} ~ {ad.end}</td>
-                        <td>{ad.status}</td>
-                        <td><button disabled>编辑</button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'buy' && (
-            <div>
-              <h2>购买广告</h2>
-              <form className="buy-form" onSubmit={handleSubmit}>
-                <label>广告类型：
-                  <select name="type" value={form.type} onChange={handleChange}>
-                    <option>横幅广告</option>
-                    <option>视频广告</option>
-                    <option>信息流广告</option>
-                    <option>开屏广告</option>
-                    <option>原生广告</option>
-                  </select>
-                </label>
-                <label>广告名称：
-                  <input name="name" value={form.name} onChange={handleChange} required />
-                </label>
-                <label>预算（元）：
-                  <input name="budget" type="number" min="1" value={form.budget} onChange={handleChange} required />
-                </label>
-                <label>投放开始：
-                  <input name="start" type="date" value={form.start} onChange={handleChange} required />
-                </label>
-                <label>投放结束：
-                  <input name="end" type="date" value={form.end} onChange={handleChange} required />
-                </label>
-                <label>广告素材（图片/链接/文字）：
-                  <input name="material" value={form.material} onChange={handleChange} required />
-                </label>
-                <button type="submit">提交购买</button>
-                {msg && <div className="form-msg">{msg}</div>}
-              </form>
-            </div>
-          )}
-          {tab === 'recharge' && (
-            <div>
-              <h2>充值</h2>
-              <form className="recharge-form" onSubmit={handleRecharge}>
-                <label>充值金额（元）：
-                  <input name="amount" type="number" min="1" value={rechargeForm.amount} onChange={handleRechargeChange} required />
-                </label>
-                <label>支付方式：
-                  <select name="method" value={rechargeForm.method} onChange={handleRechargeChange} disabled>
-                    <option>微信支付</option>
-                  </select>
-                </label>
-                <button type="submit">立即充值</button>
-                {rechargeMsg && <div className="form-msg">{rechargeMsg}</div>}
-              </form>
-            </div>
-          )}
-          {tab === 'rechargeHistory' && (
-            <div>
-              <h2>充值历史</h2>
-              {recharges.length === 0 ? <p>暂无充值记录。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>时间</th><th>金额</th><th>方式</th><th>状态</th></tr>
-                  </thead>
-                  <tbody>
-                    {recharges.map(rec => (
-                      <tr key={rec._id}>
-                        <td>{rec.time}</td>
-                        <td>￥{rec.amount}</td>
-                        <td>{rec.method}</td>
-                        <td>{rec.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'stats' && (
-            <div>
-              <h2>广告数据</h2>
-              <div className="stats-bar">
-                <label>广告类型筛选：
-                  <select value={statsType} onChange={handleStatsType}>
-                    <option>全部</option>
-                    <option>横幅广告</option>
-                    <option>视频广告</option>
-                    <option>信息流广告</option>
-                    <option>开屏广告</option>
-                    <option>原生广告</option>
-                  </select>
-                </label>
-              </div>
-              <canvas ref={chartRef} width={800} height={260} style={{marginBottom:24,background:'#f4f6fa',borderRadius:8}} />
-              {filteredStats.length === 0 ? <p>暂无广告数据。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr>
-                      <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredStats.map(ad => (
-                      <tr key={ad._id}>
-                        <td>{ad.name}</td>
-                        <td>{ad.type}</td>
-                        <td>￥{ad.budget}</td>
-                        <td>{ad.start} ~ {ad.end}</td>
-                        <td>{ad.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'invoice' && (
-            <div>
-              <h2>发票管理</h2>
-              <form className="invoice-form" onSubmit={handleInvoice}>
-                <label>选择充值记录：
-                  <select name="rechargeId" value={invoiceForm.rechargeId} onChange={handleInvoiceChange} required>
-                    <option value="">请选择</option>
-                    {recharges.map(rec => (
-                      <option value={rec._id} key={rec._id}>￥{rec.amount} - {rec.time}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>发票抬头：
-                  <input name="title" value={invoiceForm.title} onChange={handleInvoiceChange} required />
-                </label>
-                <label>税号：
-                  <input name="taxId" value={invoiceForm.taxId} onChange={handleInvoiceChange} required />
-                </label>
-                <button type="submit">申请开票</button>
-                {invoiceMsg && <div className="form-msg">{invoiceMsg}</div>}
-              </form>
-              <h3 style={{marginTop:32}}>发票申请历史</h3>
-              {invoices.length === 0 ? <p>暂无发票申请。</p> : (
-                <table className="ads-table">
-                  <thead>
-                    <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
-                  </thead>
-                  <tbody>
-                    {invoices.map(inv => (
-                      <tr key={inv._id}>
-                        <td>{inv.time}</td>
-                        <td>{inv.title}</td>
-                        <td>{inv.taxId}</td>
-                        <td>￥{inv.amount}</td>
-                        <td>{(() => {
-                          const rec = recharges.find(r => String(r._id) === inv.rechargeId);
-                          return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
-                        })()}</td>
-                        <td>{inv.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-          {tab === 'help' && (
-            <div>
-              <h2>帮助中心</h2>
-              <div className="faq-list">
-                <div className="faq-item">
-                  <div className="faq-q">Q: 如何购买广告？</div>
-                  <div className="faq-a">A: 在"购买广告"页面填写广告信息并提交，等待管理员审核即可。</div>
-                </div>
-                <div className="faq-item">
-                  <div className="faq-q">Q: 广告审核需要多久？</div>
-                  <div className="faq-a">A: 一般1个工作日内完成审核，审核结果会在"我的广告"页面显示。</div>
-                </div>
-                <div className="faq-item">
-                  <div className="faq-q">Q: 如何充值和开票？</div>
-                  <div className="faq-a">A: 在"充值"页面完成充值后，可在"发票管理"申请开票，管理员审核后开具。</div>
-                </div>
-                <div className="faq-item">
-                  <div className="faq-q">Q: 联系方式？</div>
-                  <div className="faq-a">A: 如有疑问可在"联系我们"页面留言，或拨打客服电话 400-888-8888。</div>
-                </div>
-                <div className="faq-item">
-                  <div className="faq-q">Q: 如何管理广告素材？</div>
-                  <div className="faq-a">A: 在"广告素材管理"页面上传、删除素材，购买广告时可直接引用。</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+    <main className="client-main">
+      <div style={{marginBottom: 24, textAlign: 'left', fontWeight: 500, color: '#6366f1', fontSize: 18}}>
+        当前账号：<span style={{color:'#222'}}>{user?.username}</span>
       </div>
-    </div>
+      <div className="balance-bar">账户余额：<span>￥{balance.toFixed(2)}</span></div>
+      {tab === 'ads' && (
+        <div>
+          <h2>我的广告</h2>
+          {ads.length === 0 ? <p>暂无广告，请先购买。</p> : (
+            <table className="ads-table">
+              <thead>
+                <tr>
+                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ads.map(ad => (
+                  <tr key={ad._id}>
+                    <td>{ad.name}</td>
+                    <td>{ad.type}</td>
+                    <td>￥{ad.budget}</td>
+                    <td>{ad.start} ~ {ad.end}</td>
+                    <td>{ad.status}</td>
+                    <td><button disabled>编辑</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      {tab === 'buy' && (
+        <div>
+          <h2>购买广告</h2>
+          <form className="buy-form" onSubmit={handleSubmit}>
+            <label>广告类型：
+              <select name="type" value={form.type} onChange={handleChange}>
+                <option>横幅广告</option>
+                <option>视频广告</option>
+                <option>信息流广告</option>
+                <option>开屏广告</option>
+                <option>原生广告</option>
+              </select>
+            </label>
+            <label>广告名称：
+              <input name="name" value={form.name} onChange={handleChange} required />
+            </label>
+            <label>预算（元）：
+              <input name="budget" type="number" min="1" value={form.budget} onChange={handleChange} required />
+            </label>
+            <label>投放开始：
+              <input name="start" type="date" value={form.start} onChange={handleChange} required />
+            </label>
+            <label>投放结束：
+              <input name="end" type="date" value={form.end} onChange={handleChange} required />
+            </label>
+            <label>广告素材（图片/链接/文字）：
+              <input name="material" value={form.material} onChange={handleChange} required />
+            </label>
+            <button type="submit">提交购买</button>
+            {msg && <div className="form-msg">{msg}</div>}
+          </form>
+        </div>
+      )}
+      {tab === 'material' && (
+        <div>
+          <h2>广告素材管理</h2>
+          <input type="file" accept="image/*" onChange={handleMaterialUpload} />
+          {materialMsg && <div className="form-msg">{materialMsg}</div>}
+          <div className="material-list">
+            {materials.length === 0 ? <p>暂无素材，请上传。</p> : (
+              <ul>
+                {materials.map(m => (
+                  <li key={m.id}>
+                    <img src={m.url} alt={m.name} />
+                    <div className="mat-name">{m.name}</div>
+                    <button onClick={() => handleMaterialDelete(m.id)}>删除</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+      {tab === 'recharge' && (
+        <div>
+          <h2>充值</h2>
+          <form className="recharge-form" onSubmit={handleRecharge}>
+            <label>充值金额（元）：
+              <input name="amount" type="number" min="1" value={rechargeForm.amount} onChange={handleRechargeChange} required />
+            </label>
+            <label>支付方式：
+              <select name="method" value={rechargeForm.method} onChange={handleRechargeChange} disabled>
+                <option>微信支付</option>
+              </select>
+            </label>
+            <button type="submit">立即充值</button>
+            {rechargeMsg && <div className="form-msg">{rechargeMsg}</div>}
+          </form>
+        </div>
+      )}
+      {tab === 'rechargeHistory' && (
+        <div>
+          <h2>充值历史</h2>
+          {recharges.length === 0 ? <p>暂无充值记录。</p> : (
+            <table className="ads-table">
+              <thead>
+                <tr><th>时间</th><th>金额</th><th>方式</th><th>状态</th></tr>
+              </thead>
+              <tbody>
+                {recharges.map(rec => (
+                  <tr key={rec._id}>
+                    <td>{rec.time}</td>
+                    <td>￥{rec.amount}</td>
+                    <td>{rec.method}</td>
+                    <td>{rec.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      {tab === 'stats' && (
+        <div>
+          <h2>广告数据</h2>
+          <div className="stats-bar">
+            <label>广告类型筛选：
+              <select value={statsType} onChange={handleStatsType}>
+                <option>全部</option>
+                <option>横幅广告</option>
+                <option>视频广告</option>
+                <option>信息流广告</option>
+                <option>开屏广告</option>
+                <option>原生广告</option>
+              </select>
+            </label>
+          </div>
+          <canvas ref={chartRef} width={800} height={260} style={{marginBottom:24,background:'#f4f6fa',borderRadius:8}} />
+          {filteredStats.length === 0 ? <p>暂无广告数据。</p> : (
+            <table className="ads-table">
+              <thead>
+                <tr>
+                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStats.map(ad => (
+                  <tr key={ad._id}>
+                    <td>{ad.name}</td>
+                    <td>{ad.type}</td>
+                    <td>￥{ad.budget}</td>
+                    <td>{ad.start} ~ {ad.end}</td>
+                    <td>{ad.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      {tab === 'invoice' && (
+        <div>
+          <h2>发票管理</h2>
+          <form className="invoice-form" onSubmit={handleInvoice}>
+            <label>选择充值记录：
+              <select name="rechargeId" value={invoiceForm.rechargeId} onChange={handleInvoiceChange} required>
+                <option value="">请选择</option>
+                {recharges.map(rec => (
+                  <option value={rec._id} key={rec._id}>￥{rec.amount} - {rec.time}</option>
+                ))}
+              </select>
+            </label>
+            <label>发票抬头：
+              <input name="title" value={invoiceForm.title} onChange={handleInvoiceChange} required />
+            </label>
+            <label>税号：
+              <input name="taxId" value={invoiceForm.taxId} onChange={handleInvoiceChange} required />
+            </label>
+            <button type="submit">申请开票</button>
+            {invoiceMsg && <div className="form-msg">{invoiceMsg}</div>}
+          </form>
+          <h3 style={{marginTop:32}}>发票申请历史</h3>
+          {invoices.length === 0 ? <p>暂无发票申请。</p> : (
+            <table className="ads-table">
+              <thead>
+                <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
+              </thead>
+              <tbody>
+                {invoices.map(inv => (
+                  <tr key={inv._id}>
+                    <td>{inv.time}</td>
+                    <td>{inv.title}</td>
+                    <td>{inv.taxId}</td>
+                    <td>￥{inv.amount}</td>
+                    <td>{(() => {
+                      const rec = recharges.find(r => String(r._id) === inv.rechargeId);
+                      return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
+                    })()}</td>
+                    <td>{inv.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      {tab === 'help' && (
+        <div>
+          <h2>帮助中心</h2>
+          <div className="faq-list">
+            <div className="faq-item">
+              <div className="faq-q">Q: 如何购买广告？</div>
+              <div className="faq-a">A: 在"购买广告"页面填写广告信息并提交，等待管理员审核即可。</div>
+            </div>
+            <div className="faq-item">
+              <div className="faq-q">Q: 广告审核需要多久？</div>
+              <div className="faq-a">A: 一般1个工作日内完成审核，审核结果会在"我的广告"页面显示。</div>
+            </div>
+            <div className="faq-item">
+              <div className="faq-q">Q: 如何充值和开票？</div>
+              <div className="faq-a">A: 在"充值"页面完成充值后，可在"发票管理"申请开票，管理员审核后开具。</div>
+            </div>
+            <div className="faq-item">
+              <div className="faq-q">Q: 联系方式？</div>
+              <div className="faq-a">A: 如有疑问可在"联系我们"页面留言，或拨打客服电话 400-888-8888。</div>
+            </div>
+            <div className="faq-item">
+              <div className="faq-q">Q: 如何管理广告素材？</div>
+              <div className="faq-a">A: 在"广告素材管理"页面上传、删除素材，购买广告时可直接引用。</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
 
