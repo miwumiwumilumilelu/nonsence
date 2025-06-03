@@ -7,6 +7,7 @@ const menu = [
   { key: 'adReview', label: '广告审核' },
   { key: 'invoiceReview', label: '发票审核' },
   { key: 'user', label: '用户管理' },
+  { key: 'userAudit', label: '注册审核' },
   { key: 'stats', label: '平台数据' },
   { key: 'msg', label: '留言管理' },
   { key: 'discuss', label: '讨论审核' },
@@ -26,6 +27,8 @@ function AdminCenter({ tab, setTab }) {
   const [discussions, setDiscussions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [rejectMsgs, setRejectMsgs] = useState({});
 
   // 查询留言
   const fetchMessages = async () => {
@@ -94,9 +97,15 @@ function AdminCenter({ tab, setTab }) {
       });
     }
     if (tab === 'user') {
-      axios.post(`${API_BASE}/userAdmin`, { action: 'getUsers' }).then(res => {
+      axios.post(`${API_BASE}/userAdmin`, { action: 'getUsers', status: 1 }).then(res => {
         if (res.data && res.data.ok) setUserList(res.data.data);
         else setUserList([]);
+      });
+    }
+    if (tab === 'userAudit') {
+      axios.post(`${API_BASE}/userAdmin`, { action: 'getAllUsers' }).then(res => {
+        if (res.data && res.data.ok) setPendingUsers(res.data.data);
+        else setPendingUsers([]);
       });
     }
     // eslint-disable-next-line
@@ -210,6 +219,41 @@ function AdminCenter({ tab, setTab }) {
     ctx.fillStyle = '#e57373'; ctx.fillRect(200,250,16,16); ctx.fillStyle='#333'; ctx.fillText('已驳回',220,263);
   }, [tab, adStatusCount]);
 
+  const handleApproveUser = (userId) => {
+    axios.post(`${API_BASE}/userAdmin`, { action: 'approveUser', userId })
+      .then(res => {
+        if (res.data && res.data.ok) {
+          setPendingUsers(pendingUsers.filter(u => u._id !== userId));
+        } else {
+          alert(res.data.error || '操作失败');
+        }
+      });
+  };
+
+  const handleRejectUser = (userId) => {
+    const rejectMsg = rejectMsgs[userId] || '';
+    axios.post(`${API_BASE}/userAdmin`, { action: 'rejectUser', userId, rejectMsg })
+      .then(res => {
+        if (res.data && res.data.ok) {
+          setPendingUsers(pendingUsers.map(u => u._id === userId ? { ...u, status: 2, rejectMsg } : u));
+          setRejectMsgs(msgs => { const m = { ...msgs }; delete m[userId]; return m; });
+        } else {
+          alert(res.data.error || '操作失败');
+        }
+      });
+  };
+
+  const handleSetStatus = (userId, status) => {
+    axios.post(`${API_BASE}/userAdmin`, { action: 'updateUserStatus', userId, status })
+      .then(res => {
+        if (res.data && res.data.ok) {
+          setPendingUsers(pendingUsers.map(u => u._id === userId ? { ...u, status } : u));
+        } else {
+          alert(res.data.error || '操作失败');
+        }
+      });
+  };
+
   return (
     <div className="client-center">
       <main className="client-main">
@@ -321,11 +365,12 @@ function AdminCenter({ tab, setTab }) {
             {userList.length === 0 ? <p style={{textAlign:'center'}}>暂无广告主。</p> : (
               <table className="ads-table">
                 <thead>
-                  <tr><th>用户名</th><th>注册时间</th><th>余额</th><th>操作</th></tr>
+                  <tr><th>ID</th><th>用户名</th><th>注册时间</th><th>余额</th><th>操作</th></tr>
                 </thead>
                 <tbody>
                   {userList.map(u => (
                     <tr key={u._id}>
+                      <td>{u._id}</td>
                       <td>{u.username}</td>
                       <td>{u.createdAt}</td>
                       <td>￥{u.balance}</td>
@@ -406,6 +451,45 @@ function AdminCenter({ tab, setTab }) {
               </table>
             )}
             {msg && <div style={{color:'#e57373',marginTop:8, textAlign:'center'}}>{msg}</div>}
+          </div>
+        )}
+        {tab === 'userAudit' && (
+          <div>
+            <h2 style={{textAlign:'center', color:'#1976d2', marginBottom:24}}>注册审核</h2>
+            {pendingUsers.length === 0 ? <p style={{textAlign:'center'}}>暂无注册记录。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>ID</th><th>用户名</th><th>注册时间</th><th>状态</th><th>拒绝理由</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                  {pendingUsers.map(u => (
+                    <tr key={u._id}>
+                      <td>{u._id}</td>
+                      <td>{u.username}</td>
+                      <td>{u.createdAt}</td>
+                      <td>{u.status === 0 ? '待审核' : u.status === 1 ? '已通过' : '已拒绝'}</td>
+                      <td>{u.status === 2 ? (u.rejectMsg || '') : ''}</td>
+                      <td>
+                        {u.status !== 1 && <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleSetStatus(u._id,1)}>直接通过</button>}
+                        {u.status !== 0 && <button style={{background:'#1976d2',color:'#fff',marginRight:8}} onClick={()=>handleSetStatus(u._id,0)}>恢复为待审核</button>}
+                        {u.status !== 1 && (
+                          <>
+                            <input
+                              style={{width:100,marginRight:4}}
+                              value={rejectMsgs[u._id]||''}
+                              onChange={e=>setRejectMsgs(msgs=>({...msgs,[u._id]:e.target.value}))}
+                              placeholder="拒绝理由"
+                            />
+                            <button style={{background:'#e57373',color:'#fff',marginRight:8}} onClick={()=>handleRejectUser(u._id)}>拒绝</button>
+                          </>
+                        )}
+                        <button style={{background:'#e57373',color:'#fff'}} onClick={()=>handleUserDelete(u._id)}>删除</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </main>

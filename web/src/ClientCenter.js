@@ -234,6 +234,7 @@ function ClientCenter({ user, page }) {
     <main className="client-main">
       <div style={{marginBottom: 24, textAlign: 'left', fontWeight: 500, color: '#6366f1', fontSize: 18}}>
         当前账号：<span style={{color:'#222'}}>{user?.username}</span>
+        <span style={{color:'#888', marginLeft: 16}}>ID: {user?._id}</span>
       </div>
       <div className="balance-bar">账户余额：<span>￥{balance.toFixed(2)}</span></div>
       {tab === 'ads' && (

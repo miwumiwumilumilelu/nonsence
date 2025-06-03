@@ -16,6 +16,7 @@ const adminMenu = [
   { key: 'adReview', label: '广告审核' },
   { key: 'invoiceReview', label: '发票审核' },
   { key: 'user', label: '用户管理' },
+  { key: 'userAudit', label: '注册审核' },
   { key: 'stats', label: '平台数据' },
   { key: 'msg', label: '留言管理' },
   { key: 'discuss', label: '讨论审核' },

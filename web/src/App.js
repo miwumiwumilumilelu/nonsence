@@ -51,6 +51,7 @@ function App() {
         setBalance(res.data.data.balance || 0);
         localStorage.setItem('nonsence_user_login', JSON.stringify(res.data.data));
         localStorage.setItem('nonsence_balance', String(res.data.data.balance || 0));
+        setPage('client_ads');
       } else {
         setUserMsg(res.data.error || '登录失败');
       }
@@ -69,10 +70,15 @@ function App() {
     try {
       const res = await axios.post(`${API_BASE}/register`, userForm);
       if (res.data && res.data.ok) {
-        setUser(res.data.data);
-        setBalance(res.data.data.balance || 0);
-        localStorage.setItem('nonsence_user_login', JSON.stringify(res.data.data));
-        localStorage.setItem('nonsence_balance', String(res.data.data.balance || 0));
+        if (res.data.data.status === 1) {
+          setUser(res.data.data);
+          setBalance(res.data.data.balance || 0);
+          localStorage.setItem('nonsence_user_login', JSON.stringify(res.data.data));
+          localStorage.setItem('nonsence_balance', String(res.data.data.balance || 0));
+          setPage('client_ads');
+        } else {
+          setUserMsg('注册成功，等待管理员审核！');
+        }
       } else {
         setUserMsg(res.data.error || '注册失败');
       }
@@ -107,7 +113,7 @@ function App() {
     content = (
       <div style={{maxWidth:360,margin:'60px auto',background:'#fff',borderRadius:10,boxShadow:'0 2px 16px rgba(0,0,0,0.07)',padding:'36px 32px'}}>
         <h2 style={{textAlign:'center',color:'#1976d2'}}>{showReg ? '广告主注册' : '广告主登录'}</h2>
-        <form onSubmit={showReg ? async e => { await handleRegister(e); setPage('client_ads'); } : async e => { await handleLogin(e); setPage('client_ads'); }}>
+        <form onSubmit={showReg ? handleRegister : handleLogin}>
           <label>用户名：<input name="username" value={userForm.username} onChange={e=>setUserForm(f=>({...f,username:e.target.value}))} required /></label>
           <label>密码：<input name="password" type="password" value={userForm.password} onChange={e=>setUserForm(f=>({...f,password:e.target.value}))} required /></label>
           <button type="submit" style={{width:'100%',marginTop:18}}>{showReg ? '注册' : '登录'}</button>
