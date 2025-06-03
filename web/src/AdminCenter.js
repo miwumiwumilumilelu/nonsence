@@ -272,7 +272,21 @@ function AdminCenter({ tab, setTab }) {
                       <td>{ad.type}</td>
                       <td>￥{ad.budget}</td>
                       <td>{ad.start} ~ {ad.end}</td>
-                      <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
+                      <td style={{maxWidth:120,wordBreak:'break-all'}}>
+                        {ad.material && (ad.material.endsWith('.jpg') || ad.material.endsWith('.jpeg') || ad.material.endsWith('.png') || ad.material.endsWith('.gif') || ad.material.endsWith('.webp')) ? (
+                          <div style={{textAlign:'center'}}>
+                            <img src={ad.material} alt="图片素材" style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                            <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载图片</a></div>
+                          </div>
+                        ) : ad.material && (ad.material.endsWith('.mp4') || ad.material.endsWith('.webm') || ad.material.endsWith('.mov')) ? (
+                          <div style={{textAlign:'center'}}>
+                            <video src={ad.material} controls style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                            <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载视频</a></div>
+                          </div>
+                        ) : (
+                          ad.material
+                        )}
+                      </td>
                       <td>{ad.created}</td>
                       <td>
                         <button style={{background:'#43a047',color:'#fff',marginRight:8}} onClick={()=>handleReview(ad._id,'approve')}>通过</button>
@@ -296,7 +310,21 @@ function AdminCenter({ tab, setTab }) {
                       <td>{ad.type}</td>
                       <td>￥{ad.budget}</td>
                       <td>{ad.start} ~ {ad.end}</td>
-                      <td style={{maxWidth:120,wordBreak:'break-all'}}>{ad.material}</td>
+                      <td style={{maxWidth:120,wordBreak:'break-all'}}>
+                        {ad.material && (ad.material.endsWith('.jpg') || ad.material.endsWith('.jpeg') || ad.material.endsWith('.png') || ad.material.endsWith('.gif') || ad.material.endsWith('.webp')) ? (
+                          <div style={{textAlign:'center'}}>
+                            <img src={ad.material} alt="图片素材" style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                            <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载图片</a></div>
+                          </div>
+                        ) : ad.material && (ad.material.endsWith('.mp4') || ad.material.endsWith('.webm') || ad.material.endsWith('.mov')) ? (
+                          <div style={{textAlign:'center'}}>
+                            <video src={ad.material} controls style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                            <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载视频</a></div>
+                          </div>
+                        ) : (
+                          ad.material
+                        )}
+                      </td>
                       <td>{ad.created}</td>
                       <td>{ad.status}</td>
                     </tr>

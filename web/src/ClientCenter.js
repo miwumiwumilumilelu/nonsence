@@ -44,6 +44,7 @@ function ClientCenter({ user, page }) {
   // 素材管理相关
   const [materials, setMaterials] = useState([]);
   const [materialMsg, setMaterialMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   // 加载后端数据
   useEffect(() => {
@@ -169,22 +170,80 @@ function ClientCenter({ user, page }) {
     setInvoiceMsg('发票申请已提交，等待处理');
   };
 
-  // 素材上传（本地模拟）
-  const handleMaterialUpload = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      setMaterials([{ id: Date.now(), name: file.name, url: ev.target.result }, ...materials]);
-      setMaterialMsg('上传成功！');
-      setTimeout(() => setMaterialMsg(''), 1500);
-    };
-    reader.readAsDataURL(file);
+  // 获取素材列表
+  const fetchMaterials = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.post(`${API_BASE}/material`, { action: 'getMaterials', userId: user._id });
+      if (res.data && res.data.ok) setMaterials(res.data.data);
+      else setMaterials([]);
+    } catch {
+      setMaterials([]);
+    }
   };
 
-  // 删除素材（本地模拟）
-  const handleMaterialDelete = id => {
-    setMaterials(materials.filter(m => m.id !== id));
+  useEffect(() => {
+    if (page === 'client_material' && user) fetchMaterials();
+    // eslint-disable-next-line
+  }, [page, user]);
+
+  // 素材上传（图片/视频）
+  const handleMaterialUpload = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setMaterialMsg('');
+    setUploading(true);
+    try {
+      // 1. 获取 presigned url
+      const type = file.type.startsWith('image') ? 'image' : file.type.startsWith('video') ? 'video' : '';
+      if (!type) { setMaterialMsg('仅支持图片或视频'); setUploading(false); return; }
+      const presRes = await axios.post(`${API_BASE}/material`, {
+        action: 'getPresignedUrl',
+        filename: file.name,
+        filetype: file.type,
+        userId: user._id
+      });
+      if (!presRes.data.ok) { setMaterialMsg('获取上传地址失败'); setUploading(false); return; }
+      // 2. 上传到对象存储
+      await fetch(presRes.data.url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file
+      });
+      // 3. 保存素材信息到数据库
+      const saveRes = await axios.post(`${API_BASE}/material`, {
+        action: 'saveMaterial',
+        userId: user._id,
+        type,
+        url: presRes.data.fileUrl,
+        filename: file.name
+      });
+      if (saveRes.data && saveRes.data.ok) {
+        setMaterialMsg('上传成功！');
+        fetchMaterials();
+      } else {
+        setMaterialMsg('保存素材信息失败');
+      }
+    } catch {
+      setMaterialMsg('上传失败');
+    }
+    setUploading(false);
+  };
+
+  // 删除素材
+  const handleMaterialDelete = async id => {
+    if (!window.confirm('确定要删除该素材吗？')) return;
+    try {
+      const res = await axios.post(`${API_BASE}/material`, { action: 'deleteMaterial', id });
+      if (res.data && res.data.ok) {
+        setMaterialMsg('删除成功');
+        fetchMaterials();
+      } else {
+        setMaterialMsg(res.data.error || '删除失败');
+      }
+    } catch {
+      setMaterialMsg('删除失败');
+    }
   };
 
   // 过滤后的统计数据（本地模拟）
@@ -244,7 +303,7 @@ function ClientCenter({ user, page }) {
             <table className="ads-table">
               <thead>
                 <tr>
-                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th><th>操作</th>
+                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>状态</th><th>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -254,6 +313,21 @@ function ClientCenter({ user, page }) {
                     <td>{ad.type}</td>
                     <td>￥{ad.budget}</td>
                     <td>{ad.start} ~ {ad.end}</td>
+                    <td style={{maxWidth:120,wordBreak:'break-all'}}>
+                      {ad.material && (ad.material.endsWith('.jpg') || ad.material.endsWith('.jpeg') || ad.material.endsWith('.png') || ad.material.endsWith('.gif') || ad.material.endsWith('.webp')) ? (
+                        <div style={{textAlign:'center'}}>
+                          <img src={ad.material} alt="图片素材" style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                          <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载图片</a></div>
+                        </div>
+                      ) : ad.material && (ad.material.endsWith('.mp4') || ad.material.endsWith('.webm') || ad.material.endsWith('.mov')) ? (
+                        <div style={{textAlign:'center'}}>
+                          <video src={ad.material} controls style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                          <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载视频</a></div>
+                        </div>
+                      ) : (
+                        ad.material
+                      )}
+                    </td>
                     <td>{ad.status}</td>
                     <td><button disabled>编辑</button></td>
                   </tr>
@@ -269,11 +343,9 @@ function ClientCenter({ user, page }) {
           <form className="buy-form" onSubmit={handleSubmit}>
             <label>广告类型：
               <select name="type" value={form.type} onChange={handleChange}>
-                <option>横幅广告</option>
-                <option>视频广告</option>
-                <option>信息流广告</option>
-                <option>开屏广告</option>
-                <option>原生广告</option>
+                <option value="文字广告">文字广告</option>
+                <option value="图片广告">图片广告</option>
+                <option value="视频广告">视频广告</option>
               </select>
             </label>
             <label>广告名称：
@@ -288,9 +360,31 @@ function ClientCenter({ user, page }) {
             <label>投放结束：
               <input name="end" type="date" value={form.end} onChange={handleChange} required />
             </label>
-            <label>广告素材（图片/链接/文字）：
-              <input name="material" value={form.material} onChange={handleChange} required />
-            </label>
+            {form.type === '图片广告' && (
+              <label>广告图片素材：
+                <select name="material" value={form.material} onChange={handleChange} required>
+                  <option value="">请选择图片素材</option>
+                  {materials.filter(m => m.type === 'image').map(m => (
+                    <option value={m.url} key={m._id}>{m.filename}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {form.type === '视频广告' && (
+              <label>广告视频素材：
+                <select name="material" value={form.material} onChange={handleChange} required>
+                  <option value="">请选择视频素材</option>
+                  {materials.filter(m => m.type === 'video').map(m => (
+                    <option value={m.url} key={m._id}>{m.filename}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            {form.type === '文字广告' && (
+              <label>广告文字内容：
+                <input name="material" value={form.material} onChange={handleChange} required maxLength={100} placeholder="请输入广告文本" />
+              </label>
+            )}
             <button type="submit">提交购买</button>
             {msg && <div className="form-msg">{msg}</div>}
           </form>
@@ -299,16 +393,20 @@ function ClientCenter({ user, page }) {
       {tab === 'material' && (
         <div>
           <h2>广告素材管理</h2>
-          <input type="file" accept="image/*" onChange={handleMaterialUpload} />
+          <input type="file" accept="image/*,video/*" onChange={handleMaterialUpload} disabled={uploading} />
           {materialMsg && <div className="form-msg">{materialMsg}</div>}
           <div className="material-list">
             {materials.length === 0 ? <p>暂无素材，请上传。</p> : (
-              <ul>
+              <ul style={{display:'flex',flexWrap:'wrap',gap:24,padding:0}}>
                 {materials.map(m => (
-                  <li key={m.id}>
-                    <img src={m.url} alt={m.name} />
-                    <div className="mat-name">{m.name}</div>
-                    <button onClick={() => handleMaterialDelete(m.id)}>删除</button>
+                  <li key={m._id} style={{listStyle:'none',width:180}}>
+                    {m.type === 'image' ? (
+                      <img src={m.url} alt={m.filename} style={{width:180,height:120,objectFit:'cover',borderRadius:8}} />
+                    ) : m.type === 'video' ? (
+                      <video src={m.url} controls style={{width:180,height:120,borderRadius:8}} />
+                    ) : null}
+                    <div className="mat-name" style={{margin:'8px 0'}}>{m.filename}</div>
+                    <button onClick={() => handleMaterialDelete(m._id)} style={{background:'#e57373',color:'#fff',border:'none',borderRadius:4,padding:'4px 12px'}}>删除</button>
                   </li>
                 ))}
               </ul>
@@ -362,11 +460,9 @@ function ClientCenter({ user, page }) {
             <label>广告类型筛选：
               <select value={statsType} onChange={handleStatsType}>
                 <option>全部</option>
-                <option>横幅广告</option>
+                <option>文字广告</option>
+                <option>图片广告</option>
                 <option>视频广告</option>
-                <option>信息流广告</option>
-                <option>开屏广告</option>
-                <option>原生广告</option>
               </select>
             </label>
           </div>
@@ -375,7 +471,7 @@ function ClientCenter({ user, page }) {
             <table className="ads-table">
               <thead>
                 <tr>
-                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>状态</th>
+                  <th>广告名称</th><th>类型</th><th>预算</th><th>投放时间</th><th>素材</th><th>状态</th>
                 </tr>
               </thead>
               <tbody>
@@ -385,6 +481,21 @@ function ClientCenter({ user, page }) {
                     <td>{ad.type}</td>
                     <td>￥{ad.budget}</td>
                     <td>{ad.start} ~ {ad.end}</td>
+                    <td style={{maxWidth:120,wordBreak:'break-all'}}>
+                      {ad.material && (ad.material.endsWith('.jpg') || ad.material.endsWith('.jpeg') || ad.material.endsWith('.png') || ad.material.endsWith('.gif') || ad.material.endsWith('.webp')) ? (
+                        <div style={{textAlign:'center'}}>
+                          <img src={ad.material} alt="图片素材" style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                          <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载图片</a></div>
+                        </div>
+                      ) : ad.material && (ad.material.endsWith('.mp4') || ad.material.endsWith('.webm') || ad.material.endsWith('.mov')) ? (
+                        <div style={{textAlign:'center'}}>
+                          <video src={ad.material} controls style={{maxWidth:100,maxHeight:60,borderRadius:4,marginBottom:4}} />
+                          <div><a href={ad.material} download target="_blank" rel="noopener noreferrer" style={{fontSize:12}}>下载视频</a></div>
+                        </div>
+                      ) : (
+                        ad.material
+                      )}
+                    </td>
                     <td>{ad.status}</td>
                   </tr>
                 ))}
