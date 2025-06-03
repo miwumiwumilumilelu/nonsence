@@ -10,6 +10,7 @@ interface BuyAdBody {
   start: string;
   end: string;
   material: string;
+  desc: string;
 }
 
 interface FunctionContext {
@@ -17,7 +18,7 @@ interface FunctionContext {
 }
 
 export async function main(ctx: FunctionContext) {
-  const { userId, type, name, budget, start, end, material } = ctx.body;
+  const { userId, type, name, budget, start, end, material, desc } = ctx.body;
   if (!userId || !type || !name || !budget || !start || !end || !material) {
     return { error: '参数不完整' };
   }
@@ -32,12 +33,14 @@ export async function main(ctx: FunctionContext) {
   // 写入广告
   const ad = {
     userId,
+    username: user.data.username || '',
     type,
     name,
     budget,
     start,
     end,
     material,
+    desc: desc || '',
     status: '待审核',
     created: new Date().toISOString(),
   };

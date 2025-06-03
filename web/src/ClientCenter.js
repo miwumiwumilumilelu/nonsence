@@ -15,6 +15,7 @@ function ClientCenter({ user, page }) {
     start: '',
     end: '',
     material: '',
+    desc: '',
   });
   const [msg, setMsg] = useState('');
 
@@ -90,7 +91,8 @@ function ClientCenter({ user, page }) {
         budget: Number(form.budget),
         start: form.start,
         end: form.end,
-        material: form.material
+        material: form.material,
+        desc: form.desc
       };
       if (!payload.userId || !payload.type || !payload.name || !payload.budget || !payload.start || !payload.end || !payload.material) {
         setMsg('参数不完整'); return;
@@ -105,7 +107,7 @@ function ClientCenter({ user, page }) {
           setBalance(res.data.balance);
           localStorage.setItem('nonsence_balance', String(res.data.balance));
         }
-        setForm({ type: '横幅广告', name: '', budget: '', start: '', end: '', material: '' });
+        setForm({ type: '横幅广告', name: '', budget: '', start: '', end: '', material: '', desc: '' });
       } else {
         setMsg(res.data.error || '购买失败');
       }
@@ -338,56 +340,61 @@ function ClientCenter({ user, page }) {
         </div>
       )}
       {tab === 'buy' && (
-        <div>
-          <h2>购买广告</h2>
-          <form className="buy-form" onSubmit={handleSubmit}>
-            <label>广告类型：
-              <select name="type" value={form.type} onChange={handleChange}>
-                <option value="文字广告">文字广告</option>
-                <option value="图片广告">图片广告</option>
-                <option value="视频广告">视频广告</option>
-              </select>
-            </label>
-            <label>广告名称：
-              <input name="name" value={form.name} onChange={handleChange} required />
-            </label>
-            <label>预算（元）：
-              <input name="budget" type="number" min="1" value={form.budget} onChange={handleChange} required />
-            </label>
-            <label>投放开始：
-              <input name="start" type="date" value={form.start} onChange={handleChange} required />
-            </label>
-            <label>投放结束：
-              <input name="end" type="date" value={form.end} onChange={handleChange} required />
-            </label>
-            {form.type === '图片广告' && (
-              <label>广告图片素材：
-                <select name="material" value={form.material} onChange={handleChange} required>
-                  <option value="">请选择图片素材</option>
-                  {materials.filter(m => m.type === 'image').map(m => (
-                    <option value={m.url} key={m._id}>{m.filename}</option>
-                  ))}
+        <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',minHeight:400}}>
+          <div style={{width:400}}>
+            <h2 style={{textAlign:'center'}}>购买广告</h2>
+            <form className="buy-form" onSubmit={handleSubmit}>
+              <label>广告类型：
+                <select name="type" value={form.type} onChange={handleChange}>
+                  <option value="文字广告">文字广告</option>
+                  <option value="图片广告">图片广告</option>
+                  <option value="视频广告">视频广告</option>
                 </select>
               </label>
-            )}
-            {form.type === '视频广告' && (
-              <label>广告视频素材：
-                <select name="material" value={form.material} onChange={handleChange} required>
-                  <option value="">请选择视频素材</option>
-                  {materials.filter(m => m.type === 'video').map(m => (
-                    <option value={m.url} key={m._id}>{m.filename}</option>
-                  ))}
-                </select>
+              <label>广告名称：
+                <input name="name" value={form.name} onChange={handleChange} required />
               </label>
-            )}
-            {form.type === '文字广告' && (
-              <label>广告文字内容：
-                <input name="material" value={form.material} onChange={handleChange} required maxLength={100} placeholder="请输入广告文本" />
+              <label>预算（元）：
+                <input name="budget" type="number" min="1" value={form.budget} onChange={handleChange} required />
               </label>
-            )}
-            <button type="submit">提交购买</button>
-            {msg && <div className="form-msg">{msg}</div>}
-          </form>
+              <label>投放开始：
+                <input name="start" type="date" value={form.start} onChange={handleChange} required />
+              </label>
+              <label>投放结束：
+                <input name="end" type="date" value={form.end} onChange={handleChange} required />
+              </label>
+              <label>广告介绍：
+                <textarea name="desc" value={form.desc} onChange={handleChange} placeholder="请输入广告介绍" style={{width:'100%',minHeight:60,resize:'vertical'}} />
+              </label>
+              {form.type === '图片广告' && (
+                <label>广告图片素材：
+                  <select name="material" value={form.material} onChange={handleChange} required>
+                    <option value="">请选择图片素材</option>
+                    {materials.filter(m => m.type === 'image').map(m => (
+                      <option value={m.url} key={m._id}>{m.filename}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {form.type === '视频广告' && (
+                <label>广告视频素材：
+                  <select name="material" value={form.material} onChange={handleChange} required>
+                    <option value="">请选择视频素材</option>
+                    {materials.filter(m => m.type === 'video').map(m => (
+                      <option value={m.url} key={m._id}>{m.filename}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {form.type === '文字广告' && (
+                <label>广告文字内容：
+                  <input name="material" value={form.material} onChange={handleChange} required maxLength={100} placeholder="请输入广告文本" />
+                </label>
+              )}
+              <button type="submit">提交购买</button>
+              {msg && <div className="form-msg">{msg}</div>}
+            </form>
+          </div>
         </div>
       )}
       {tab === 'material' && (
@@ -415,20 +422,22 @@ function ClientCenter({ user, page }) {
         </div>
       )}
       {tab === 'recharge' && (
-        <div>
-          <h2>充值</h2>
-          <form className="recharge-form" onSubmit={handleRecharge}>
-            <label>充值金额（元）：
-              <input name="amount" type="number" min="1" value={rechargeForm.amount} onChange={handleRechargeChange} required />
-            </label>
-            <label>支付方式：
-              <select name="method" value={rechargeForm.method} onChange={handleRechargeChange} disabled>
-                <option>微信支付</option>
-              </select>
-            </label>
-            <button type="submit">立即充值</button>
-            {rechargeMsg && <div className="form-msg">{rechargeMsg}</div>}
-          </form>
+        <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',minHeight:400}}>
+          <div style={{width:400}}>
+            <h2 style={{textAlign:'center'}}>充值</h2>
+            <form className="recharge-form" onSubmit={handleRecharge}>
+              <label>充值金额（元）：
+                <input name="amount" type="number" min="1" value={rechargeForm.amount} onChange={handleRechargeChange} required />
+              </label>
+              <label>支付方式：
+                <select name="method" value={rechargeForm.method} onChange={handleRechargeChange} disabled>
+                  <option>微信支付</option>
+                </select>
+              </label>
+              <button type="submit">立即充值</button>
+              {rechargeMsg && <div className="form-msg">{rechargeMsg}</div>}
+            </form>
+          </div>
         </div>
       )}
       {tab === 'rechargeHistory' && (
@@ -505,49 +514,51 @@ function ClientCenter({ user, page }) {
         </div>
       )}
       {tab === 'invoice' && (
-        <div>
-          <h2>发票管理</h2>
-          <form className="invoice-form" onSubmit={handleInvoice}>
-            <label>选择充值记录：
-              <select name="rechargeId" value={invoiceForm.rechargeId} onChange={handleInvoiceChange} required>
-                <option value="">请选择</option>
-                {recharges.map(rec => (
-                  <option value={rec._id} key={rec._id}>￥{rec.amount} - {rec.time}</option>
-                ))}
-              </select>
-            </label>
-            <label>发票抬头：
-              <input name="title" value={invoiceForm.title} onChange={handleInvoiceChange} required />
-            </label>
-            <label>税号：
-              <input name="taxId" value={invoiceForm.taxId} onChange={handleInvoiceChange} required />
-            </label>
-            <button type="submit">申请开票</button>
-            {invoiceMsg && <div className="form-msg">{invoiceMsg}</div>}
-          </form>
-          <h3 style={{marginTop:32}}>发票申请历史</h3>
-          {invoices.length === 0 ? <p>暂无发票申请。</p> : (
-            <table className="ads-table">
-              <thead>
-                <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
-              </thead>
-              <tbody>
-                {invoices.map(inv => (
-                  <tr key={inv._id}>
-                    <td>{inv.time}</td>
-                    <td>{inv.title}</td>
-                    <td>{inv.taxId}</td>
-                    <td>￥{inv.amount}</td>
-                    <td>{(() => {
-                      const rec = recharges.find(r => String(r._id) === inv.rechargeId);
-                      return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
-                    })()}</td>
-                    <td>{inv.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',minHeight:400}}>
+          <div style={{width:500}}>
+            <h2 style={{textAlign:'center'}}>发票管理</h2>
+            <form className="invoice-form" onSubmit={handleInvoice}>
+              <label>选择充值记录：
+                <select name="rechargeId" value={invoiceForm.rechargeId} onChange={handleInvoiceChange} required>
+                  <option value="">请选择</option>
+                  {recharges.map(rec => (
+                    <option value={rec._id} key={rec._id}>￥{rec.amount} - {rec.time}</option>
+                  ))}
+                </select>
+              </label>
+              <label>发票抬头：
+                <input name="title" value={invoiceForm.title} onChange={handleInvoiceChange} required />
+              </label>
+              <label>税号：
+                <input name="taxId" value={invoiceForm.taxId} onChange={handleInvoiceChange} required />
+              </label>
+              <button type="submit">申请开票</button>
+              {invoiceMsg && <div className="form-msg">{invoiceMsg}</div>}
+            </form>
+            <h3 style={{marginTop:32}}>发票申请历史</h3>
+            {invoices.length === 0 ? <p>暂无发票申请。</p> : (
+              <table className="ads-table">
+                <thead>
+                  <tr><th>申请时间</th><th>发票抬头</th><th>税号</th><th>金额</th><th>关联充值</th><th>状态</th></tr>
+                </thead>
+                <tbody>
+                  {invoices.map(inv => (
+                    <tr key={inv._id}>
+                      <td>{inv.time}</td>
+                      <td>{inv.title}</td>
+                      <td>{inv.taxId}</td>
+                      <td>￥{inv.amount}</td>
+                      <td>{(() => {
+                        const rec = recharges.find(r => String(r._id) === inv.rechargeId);
+                        return rec ? `￥${rec.amount} - ${rec.time}` : '已删除';
+                      })()}</td>
+                      <td>{inv.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
       {tab === 'help' && (

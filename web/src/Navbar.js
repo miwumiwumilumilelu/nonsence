@@ -64,7 +64,10 @@ const Navbar = ({ setPage, current, user, adminLogged, onLogout, onAdminLogout, 
       <button className={current === 'about' ? 'active' : ''} onClick={() => setPage('about')}>关于我们</button>
       <button className={current === 'admin' ? 'active' : ''} onClick={() => setPage('admin')}>系统管理</button>
     </div>
-    <div style={{position:'absolute',right:32,top:16}}>
+    <div style={{position:'absolute',right:32,top:16,display:'flex',alignItems:'center',gap:12}}>
+      {user && (
+        <button onClick={() => setPage('client_ads')} style={{background:'#6366f1',color:'#fff',border:'none',borderRadius:4,padding:'6px 16px',cursor:'pointer'}}>个人中心</button>
+      )}
       {user ? (
         <button onClick={onLogout} style={{background:'#e57373',color:'#fff',border:'none',borderRadius:4,padding:'6px 16px',cursor:'pointer'}}>退出账号</button>
       ) : adminLogged ? (
