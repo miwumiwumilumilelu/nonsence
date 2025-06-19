@@ -113,7 +113,7 @@ function App() {
   if (page.startsWith('client') && user) showSidebar = true;
   if (page === 'admin' && adminLogged) showSidebar = true;
   if ((page === 'client' && !user) || (page === 'admin' && !adminLogged)) isLoginPage = true;
-  if (page === 'messages' || page === 'cases' || page === 'api') isSpecialBgPage = true;
+  if (page === 'messages' || page === 'cases' || page === 'api' || page === 'contact' || page === 'about') isSpecialBgPage = true;
 
   if (page === 'home') content = <Home />;
   else if (page === 'cases') content = <Cases />;
