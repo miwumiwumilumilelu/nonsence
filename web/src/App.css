@@ -78,3 +78,27 @@
   letter-spacing: 1px;
   margin-top: 32px;
 }
+
+/* 登录页面特殊样式覆盖 */
+.App-content.login-page {
+  background: transparent;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.App-content.login-page .login-bg {
+  margin-left: 0 !important;
+}
+
+/* 特殊背景页面样式覆盖 */
+.App-content.special-bg-page {
+  background: transparent;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.App-content.special-bg-page .message-board-bg,
+.App-content.special-bg-page .cases-bg,
+.App-content.special-bg-page .api-doc-bg {
+  margin-left: 0 !important;
+}
