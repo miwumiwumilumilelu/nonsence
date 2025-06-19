@@ -1,0 +1,104 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.App-content {
+  min-height: 80vh;
+  background: #f4f6fa;
+  padding-bottom: 40px;
+}
+
+/* 卡片、横幅、分组标题样式 */
+.page-card {
+  background: rgba(255,255,255,0.96);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px rgba(99,102,241,0.10), 0 1.5px 8px rgba(0,0,0,0.04);
+  padding: 36px 32px;
+  margin: 32px auto;
+  max-width: 1000px;
+  position: relative;
+  z-index: 1;
+  transition: box-shadow 0.2s;
+}
+.page-card:hover {
+  box-shadow: 0 8px 40px #6366f144;
+}
+.page-banner {
+  width: 100%;
+  background: linear-gradient(90deg,#6366f1 0%,#818cf8 100%);
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 22px 0 18px 36px;
+  border-radius: 18px 18px 0 0;
+  margin-bottom: 0;
+  letter-spacing: 2px;
+  box-shadow: 0 2px 12px #6366f122;
+}
+.page-section-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #6366f1;
+  margin-bottom: 18px;
+  letter-spacing: 1px;
+  margin-top: 32px;
+}
+
+/* 登录页面特殊样式覆盖 */
+.App-content.login-page {
+  background: transparent;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.App-content.login-page .login-bg {
+  margin-left: 0 !important;
+}
+
+/* 特殊背景页面样式覆盖 */
+.App-content.special-bg-page {
+  background: transparent;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.App-content.special-bg-page .message-board-bg,
+.App-content.special-bg-page .cases-bg,
+.App-content.special-bg-page .api-doc-bg {
+  margin-left: 0 !important;
+}

@@ -1,0 +1,235 @@
+.home-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+.wave-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
+  overflow: hidden;
+  height: 120px;
+  pointer-events: none;
+}
+.wave-anim {
+  width: 200%;
+  min-width: 1440px;
+  height: 120px;
+  animation: waveMove 8s linear infinite;
+  display: block;
+}
+@keyframes waveMove {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.home-card {
+  background: rgba(255,255,255,0.92);
+  border-radius: 22px;
+  box-shadow: 0 8px 40px rgba(99,102,241,0.10), 0 1.5px 8px rgba(0,0,0,0.04);
+  padding: 48px 32px 36px 32px;
+  margin: 80px auto 32px auto;
+  max-width: 900px;
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(40px);
+  animation: fadeInUp 1.2s cubic-bezier(.23,1.02,.67,1) 0.2s forwards;
+}
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.home {
+  text-align: center;
+  margin-top: 0;
+}
+.platform-title {
+  font-size: 2.8rem;
+  margin-bottom: 32px;
+  color: #3730a3;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 12px #a5b4fc33;
+}
+
+.welcome {
+  font-size: 1.35rem;
+  color: #444;
+  margin-bottom: 32px;
+  margin-top: 18px;
+  letter-spacing: 1px;
+}
+
+/* 首页各区块样式 */
+.home-section {
+  margin: 32px 0;
+}
+
+.home-section.card {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(165, 180, 252, 0.2);
+}
+
+.home-section.card h2 {
+  color: #3730a3;
+  font-size: 1.8rem;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.home-section.card p {
+  color: #374151;
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+/* 功能卡片网格 */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin: 40px 0;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(165, 180, 252, 0.2);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+}
+
+.feature-card span {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.feature-card h3 {
+  color: #3730a3;
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.feature-card p {
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* 快速入口按钮 */
+.quick-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 40px 0;
+  flex-wrap: wrap;
+}
+
+.quick-btn {
+  display: inline-block;
+  padding: 14px 32px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.quick-btn.primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+}
+
+.quick-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+.quick-btn.secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #6366f1;
+  border-color: #6366f1;
+}
+
+.quick-btn.secondary:hover {
+  background: #6366f1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+}
+
+.quick-btn:not(.primary):not(.secondary) {
+  background: rgba(255, 255, 255, 0.8);
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.quick-btn:not(.primary):not(.secondary):hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #6366f1;
+  color: #6366f1;
+  transform: translateY(-2px);
+}
+
+/* 技术栈横条 */
+.tech-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  margin-top: 40px;
+}
+
+.tech-bar span {
+  color: #6b7280;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.home-card:after {
+  content: '';
+  display: block;
+  margin: 28px auto 0 auto;
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg,#a5b4fc 0%,#818cf8 100%);
+  opacity: 0.18;
+}
+
+#tsparticles {
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 社区讨论居中显示 */
+.community-center {
+  display: flex;
+  justify-content: center;
+  margin: 40px 0;
+}
+
+.community-card {
+  max-width: 300px;
+}
